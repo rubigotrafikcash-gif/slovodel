@@ -11,6 +11,7 @@ skills/slovodel/SKILL.md
 skills/slovodel/references/formats.md
 skills/slovodel/references/compliance.md
 skills/slovodel/references/examples.md
+skills/slovodel/references/workflows.md
 skills/slovodel/assets/voice-brief.md
 skills/slovodel/references/methodology.md
 evals/cases.md
