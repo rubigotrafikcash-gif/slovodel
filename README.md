@@ -8,17 +8,22 @@
 
 ```text
 skills/slovodel/SKILL.md
+skills/slovodel/references/formats.md
+skills/slovodel/references/compliance.md
+skills/slovodel/references/examples.md
+skills/slovodel/references/workflows.md
+skills/slovodel/assets/voice-brief.md
 skills/slovodel/references/methodology.md
 evals/cases.md
 README.md
 LICENSE
 ```
 
-`SKILL.md` содержит применимый редакторский процесс. Справочник объясняет происхождение и пределы метода; `evals/cases.md` даёт сценарии ручной проверки. Скриптов, внешних запросов и учётных данных нет.
+`SKILL.md` содержит применимый редакторский процесс. Справочники описывают форматы, проверки перед публикацией, примеры и пределы метода; `evals/cases.md` даёт сценарии ручной проверки (17 случаев с критериями прохождения и провала). Скриптов, внешних запросов и учётных данных нет.
 
 ## Использование
 
-Откройте [SKILL.md](skills/slovodel/SKILL.md) и добавьте весь каталог `skills/slovodel` в каталог навыков вашего агента. Он должен сохранить `references/` рядом с `SKILL.md`.
+Откройте [SKILL.md](skills/slovodel/SKILL.md) и добавьте весь каталог `skills/slovodel` в каталог навыков вашего агента. Он должен сохранить `references/` и `assets/` рядом с `SKILL.md`.
 
 - **Codex / ChatGPT:** включите каталог как навык через доступный в вашей версии интерфейс или положите его в поддерживаемый каталог навыков. В Codex явно вызовите `$slovodel`, в ChatGPT — `@slovodel`, если навык установлен. [Руководство OpenAI](https://developers.openai.com/codex/skills-and-plugins).
 - **Claude Code:** скопируйте каталог в `.claude/skills/slovodel/` проекта или `~/.claude/skills/slovodel/` для себя; вызовите `/slovodel`. [Руководство Anthropic](https://code.claude.com/docs/en/skills).
