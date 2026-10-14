@@ -9,6 +9,7 @@
 ```text
 skills/slovodel/SKILL.md
 skills/slovodel/references/formats.md
+skills/slovodel/references/examples.md
 skills/slovodel/references/methodology.md
 evals/cases.md
 README.md
