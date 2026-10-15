@@ -21,12 +21,12 @@ def execute(command: str, args: list[str] | None = None) -> int:
         parser.add_argument("--reference", help="Local profile JSON (not normative).")
         parser.add_argument("--morphology", action="store_true",
                             help="Optional local pymorphy3 POS; no network.")
-        parser.add_argument("--morphology", action="store_true",
-                            help="Optional local pymorphy3 POS; no network.")
     elif command == "compare":
         parser.add_argument("--before", required=True)
         parser.add_argument("--after", required=True)
         parser.add_argument("--reference", help="Local profile JSON (not normative).")
+        parser.add_argument("--morphology", action="store_true",
+                            help="Optional local pymorphy3 POS; no network.")
     elif command == "build-reference":
         parser.add_argument("--input", required=True)
         for arg in (
@@ -52,18 +52,25 @@ def execute(command: str, args: list[str] | None = None) -> int:
                 rights_basis=namespace.rights_basis,
             )
         else:
+            morphology, morphology_reason = None, "MORPHOLOGY_OPT_IN_REQUIRED"
+            if namespace.morphology:
+                from .morphology import load_backend
+                morphology, morphology_reason = load_backend()
             reference = None
             if namespace.reference is not None:
                 _, local_json = read_text(namespace.reference)
                 reference = parse_profile(local_json)
             if command == "analyze":
                 raw, decoded = read_text(namespace.input)
-                document = audit(raw, decoded, reference=reference)
+                document = audit(raw, decoded, reference=reference,
+                                 morphology=morphology,
+                                 morphology_reason=morphology_reason)
             else:
                 before_raw, before = read_text(namespace.before)
                 after_raw, after = read_text(namespace.after)
                 document = compare(
-                    before_raw, before, after_raw, after, reference=reference
+                    before_raw, before, after_raw, after, reference=reference,
+                    morphology=morphology, morphology_reason=morphology_reason
                 )
         serialized = json.dumps(
             document, ensure_ascii=False, sort_keys=True, indent=2
