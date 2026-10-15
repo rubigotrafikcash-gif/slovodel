@@ -1,0 +1,184 @@
+{
+  "fixture_version": "1.0",
+  "description": "Synthetic synthetic-only A8 negative and neutral regression inputs. All names and amounts fictitious; not agent responses.",
+  "cases": [
+    {
+      "id": "identical",
+      "before": "Мама мыла раму.",
+      "after": "Мама мыла раму.",
+      "decision": "unchanged",
+      "expected_kind": null,
+      "terms": []
+    },
+    {
+      "id": "punctuation-only",
+      "before": "Мама мыла раму.",
+      "after": "Мама мыла раму!",
+      "decision": "review_required",
+      "expected_kind": null,
+      "terms": []
+    },
+    {
+      "id": "different-neutral-word",
+      "before": "Удобный сервис.",
+      "after": "Понятный сервис.",
+      "decision": "review_required",
+      "expected_kind": null,
+      "terms": []
+    },
+    {
+      "id": "changed-salary",
+      "before": "Оплата 50 000 ₽.",
+      "after": "Оплата 80 000 ₽.",
+      "decision": "blocked",
+      "expected_kind": "money",
+      "terms": []
+    },
+    {
+      "id": "removed-salary",
+      "before": "Оплата 50 000 ₽.",
+      "after": "Оплата обсуждается.",
+      "decision": "blocked",
+      "expected_kind": "money",
+      "terms": []
+    },
+    {
+      "id": "added-price",
+      "before": "Доступ по запросу.",
+      "after": "Доступ за 100 ₽.",
+      "decision": "blocked",
+      "expected_kind": "money",
+      "terms": []
+    },
+    {
+      "id": "deadline-relative",
+      "before": "Отклики до пятницы.",
+      "after": "Отклики до четверга.",
+      "decision": "blocked",
+      "expected_kind": "deadline",
+      "terms": []
+    },
+    {
+      "id": "changed-date",
+      "before": "Звонок 15.10.2026.",
+      "after": "Звонок 16.10.2026.",
+      "decision": "blocked",
+      "expected_kind": "date",
+      "terms": []
+    },
+    {
+      "id": "changed-url",
+      "before": "Ссылка https://example.org/a",
+      "after": "Ссылка https://example.org/b",
+      "decision": "blocked",
+      "expected_kind": "url",
+      "terms": []
+    },
+    {
+      "id": "changed-email",
+      "before": "Пишите на a@example.org",
+      "after": "Пишите на b@example.org",
+      "decision": "blocked",
+      "expected_kind": "email",
+      "terms": []
+    },
+    {
+      "id": "changed-range",
+      "before": "Срок от 5 до 7 дней.",
+      "after": "Срок от 5 до 8 дней.",
+      "decision": "blocked",
+      "expected_kind": "range",
+      "terms": []
+    },
+    {
+      "id": "changed-hours",
+      "before": "20 часов в неделю.",
+      "after": "20 часов в месяц.",
+      "decision": "blocked",
+      "expected_kind": "quantity",
+      "terms": []
+    },
+    {
+      "id": "removed-negation",
+      "before": "Оплата не требуется.",
+      "after": "Оплата требуется.",
+      "decision": "blocked",
+      "expected_kind": "condition",
+      "terms": []
+    },
+    {
+      "id": "modal-change",
+      "before": "Пользователь может ответить.",
+      "after": "Пользователь должен ответить.",
+      "decision": "blocked",
+      "expected_kind": "condition",
+      "terms": []
+    },
+    {
+      "id": "added-constraint",
+      "before": "Принимаются заявки.",
+      "after": "Принимаются заявки только после проверки.",
+      "decision": "blocked",
+      "expected_kind": "condition",
+      "terms": []
+    },
+    {
+      "id": "organisation",
+      "before": "ООО «Альфа»",
+      "after": "ООО «Бета»",
+      "decision": "blocked",
+      "expected_kind": "organization",
+      "terms": []
+    },
+    {
+      "id": "person",
+      "before": "Иван Иванов поможет.",
+      "after": "Пётр Сидоров поможет.",
+      "decision": "blocked",
+      "expected_kind": "person",
+      "terms": []
+    },
+    {
+      "id": "percent",
+      "before": "Скидка 10%.",
+      "after": "Скидка 15%.",
+      "decision": "blocked",
+      "expected_kind": "quantity",
+      "terms": []
+    },
+    {
+      "id": "number",
+      "before": "12 кандидатов.",
+      "after": "14 кандидатов.",
+      "decision": "blocked",
+      "expected_kind": "number",
+      "terms": []
+    },
+    {
+      "id": "protected-phrase",
+      "before": "Доступ по письменному согласию.",
+      "after": "Доступ по согласию.",
+      "decision": "blocked",
+      "expected_kind": "protected_term",
+      "terms": [
+        "письменному согласию"
+      ]
+    },
+    {
+      "id": "nfc-equivalent",
+      "before": "Ёлка растёт.",
+      "after": "Ёлка растёт.",
+      "decision": "unchanged",
+      "expected_kind": null,
+      "terms": []
+    },
+    {
+      "id": "unknown-prose-claim",
+      "before": "Сервис помогает экономить время.",
+      "after": "Сервис гарантирует результат.",
+      "decision": "review_required",
+      "expected_kind": null,
+      "terms": []
+    }
+  ]
+}
