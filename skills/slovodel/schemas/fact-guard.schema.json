@@ -1,0 +1,198 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/rubigotrafikcash-gif/slovodel/blob/main/schemas/fact-guard.schema.json",
+  "title": "Slovodel protected facts A8 report v1",
+  "description": "Independent structural risk screen, never a semantic guarantee. Values are redacted.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "guard_version",
+    "tool_version",
+    "decision",
+    "publish_ready",
+    "semantic_equivalence",
+    "changed",
+    "findings",
+    "warnings",
+    "source_sha256",
+    "revision_sha256",
+    "protected_terms_count"
+  ],
+  "properties": {
+    "guard_version": {
+      "const": "a8-rules-1.0"
+    },
+    "tool_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "decision": {
+      "enum": [
+        "unchanged",
+        "review_required",
+        "blocked"
+      ]
+    },
+    "publish_ready": {
+      "const": false
+    },
+    "semantic_equivalence": {
+      "const": "not_verified"
+    },
+    "changed": {
+      "type": "boolean"
+    },
+    "source_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "revision_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "protected_terms_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "severity",
+          "before_count",
+          "after_count",
+          "removed_count",
+          "added_count"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "url",
+              "email",
+              "money",
+              "date",
+              "deadline",
+              "range",
+              "quantity",
+              "number",
+              "organization",
+              "person",
+              "condition",
+              "protected_term"
+            ]
+          },
+          "severity": {
+            "const": "blocker"
+          },
+          "before_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "after_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "removed_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "added_count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "const": "blocked"
+          }
+        },
+        "required": [
+          "decision"
+        ]
+      },
+      "then": {
+        "properties": {
+          "findings": {
+            "minItems": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "enum": [
+              "unchanged",
+              "review_required"
+            ]
+          }
+        },
+        "required": [
+          "decision"
+        ]
+      },
+      "then": {
+        "properties": {
+          "findings": {
+            "maxItems": 0
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "const": "unchanged"
+          }
+        },
+        "required": [
+          "decision"
+        ]
+      },
+      "then": {
+        "properties": {
+          "changed": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "const": "review_required"
+          }
+        },
+        "required": [
+          "decision"
+        ]
+      },
+      "then": {
+        "properties": {
+          "changed": {
+            "const": true
+          }
+        }
+      }
+    }
+  ]
+}
