@@ -21,7 +21,11 @@ def read_text(path: str) -> tuple[bytes, str]:
     try:
         if target.is_symlink():
             raise DataError("INPUT_SYMLINK")
-        fd = os.open(\n            target, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)\n            | getattr(os, "O_NONBLOCK", 0)\n        )
+        fd = os.open(
+            target,
+            os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+            | getattr(os, "O_NONBLOCK", 0),
+        )
         try:
             info = os.fstat(fd)
             if not stat.S_ISREG(info.st_mode):
