@@ -167,7 +167,7 @@ class MetricReferenceTests(unittest.TestCase):
             self.assertIsNone(m["value"])
 
     def test_nfc_equivalent_text_same_measurements(self):
-        first = {m["id"]: (m["status"], m["value"]) for m in calculate("е\\u0308ж")}
+        first = {m["id"]: (m["status"], m["value"]) for m in calculate("е\u0308ж")}
         second = {m["id"]: (m["status"], m["value"]) for m in calculate("ёж")}
         self.assertEqual(first, second)
 
