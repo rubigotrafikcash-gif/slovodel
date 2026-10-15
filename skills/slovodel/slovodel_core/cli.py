@@ -1,10 +1,11 @@
-"""Command-line interface shared by analyze.py and compare.py."""
+"""Offline CLI: audit / compare / build an opt-in non-normative local profile."""
 from __future__ import annotations
 
 import argparse
 import json
 import sys
 
+from .a2 import ProfileError, make_profile, parse_profile
 from .io import DataError, emit_json, read_text
 from .reports import audit, compare
 
@@ -12,32 +13,62 @@ from .reports import audit, compare
 def execute(command: str, args: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="slovodel-" + command,
-        description="Offline Slovodel orthographic metrics; no historical scores.",
+        description="Offline Russian orthographic metrics; no official normative corpus.",
     )
     if command == "analyze":
         parser.add_argument("--input", required=True)
         parser.add_argument("--mode", choices=["audit"], default="audit")
+        parser.add_argument("--reference", help="Local profile JSON (not normative).")
     elif command == "compare":
         parser.add_argument("--before", required=True)
         parser.add_argument("--after", required=True)
+        parser.add_argument("--reference", help="Local profile JSON (not normative).")
+    elif command == "build-reference":
+        parser.add_argument("--input", required=True)
+        for arg in (
+            "source-label", "source-url", "genre", "corpus-version",
+            "license-id", "rights-basis",
+        ):
+            parser.add_argument("--" + arg, required=True)
     else:
         raise ValueError("Unsupported command")
     parser.add_argument("--format", choices=["json"], default="json")
     parser.add_argument("--output", help="Create a new JSON file (never overwrite).")
     namespace = parser.parse_args(args)
     try:
-        if command == "analyze":
+        if command == "build-reference":
             raw, decoded = read_text(namespace.input)
-            document = audit(raw, decoded)
+            document = make_profile(
+                raw, decoded,
+                source_label=namespace.source_label,
+                source_url=namespace.source_url,
+                genre=namespace.genre,
+                corpus_version=namespace.corpus_version,
+                license_id=namespace.license_id,
+                rights_basis=namespace.rights_basis,
+            )
         else:
-            before_raw, before = read_text(namespace.before)
-            after_raw, after = read_text(namespace.after)
-            document = compare(before_raw, before, after_raw, after)
+            reference = None
+            if namespace.reference is not None:
+                _, local_json = read_text(namespace.reference)
+                reference = parse_profile(local_json)
+            if command == "analyze":
+                raw, decoded = read_text(namespace.input)
+                document = audit(raw, decoded, reference=reference)
+            else:
+                before_raw, before = read_text(namespace.before)
+                after_raw, after = read_text(namespace.after)
+                document = compare(
+                    before_raw, before, after_raw, after, reference=reference
+                )
         serialized = json.dumps(
             document, ensure_ascii=False, sort_keys=True, indent=2
         )
         emit_json(serialized, namespace.output)
         return 0
+    except ProfileError as error:
+        print("SLOVODEL_ERROR: " + str(error), file=sys.stderr)
+        return 3
     except DataError as error:
         print("SLOVODEL_ERROR: " + str(error), file=sys.stderr)
         return 3 if str(error).startswith("INPUT_") else 4
