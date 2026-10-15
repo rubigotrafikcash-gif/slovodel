@@ -238,6 +238,8 @@ def calculate(decoded: str, reference: tuple[dict, str] | None = None,
         metrics.extend(calculate_pos(decoded, morphology))
     else:
         metrics.append(unavailable("pos_distribution", morphology_reason))
+    from .editorial_metrics import extra_metrics
+    metrics.extend(extra_metrics(text))
     metrics.extend([
         unavailable("norm_letter_deviation", "NORMATIVE_CORPUS_NOT_AVAILABLE"),
         unavailable("historical_suggestive_score",
