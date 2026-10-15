@@ -15,6 +15,10 @@ on:
       - "tests/test_offline_policy.py"
       - "tests/test_agent_eval_manifest.py"
       - "tests/test_historical_manifest.py"
+      - "tests/test_v07.py"
+      - "evals/primary-v07.json"
+      - "skills/slovodel/references/copywriting-ux.md"
+      - "docs/ISSUE_22_VERIFICATION.md"
       - "docs/research/**"
       - "docs/ISSUE_11_VERIFICATION.md"
       - "tests/fixtures/**"
@@ -92,6 +96,8 @@ jobs:
           python -m coverage json --include="*/slovodel_core/metrics.py,*/slovodel_core/a2.py,*/slovodel_core/fact_guard.py,*/slovodel_core/reports.py,*/slovodel_core/workflow.py" -o test-results/coverage.json
       - name: Save machine-readable unit/regression results
         run: python scripts/quality_report.py --output test-results/unittest-results.json
+      - name: Re-run sourced Zhuravlev word benchmark without pretending Diaton equivalence
+        run: python scripts/benchmark_v07.py --output test-results/v07-primary-benchmark.json
       - name: Isolated installed skill smoke (Codex/Claude folder layouts, no agent auth)
         run: python scripts/release_smoke.py --output test-results/portable-install.json
       - name: No-network smoke (socket functions disabled, synthetic texts)
@@ -125,5 +131,6 @@ jobs:
             test-results/coverage.json
             test-results/unittest-results.json
             test-results/portable-install.json
+            test-results/v07-primary-benchmark.json
           if-no-files-found: warn
           retention-days: 30
