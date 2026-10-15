@@ -1,4 +1,4 @@
-name: Slovodel public quality gates: tests schemas coverage offline
+name: "Slovodel public quality gates: tests schemas coverage offline"
 on:
   pull_request:
     paths:
