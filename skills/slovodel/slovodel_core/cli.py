@@ -95,15 +95,16 @@ def execute(command: str, args: list[str] | None = None) -> int:
         )
         emit_json(serialized, namespace.output)
         return 5 if command == "validate" and document["decision"] == "blocked" else 0
+    except ProfileError as error:
+        # ProfileError inherits ValueError and must be caught first (A2).
+        print("SLOVODEL_ERROR: " + str(error), file=sys.stderr)
+        return 3
     except ValueError as error:
         # validate_terms uses fixed codes only; never echo arbitrary user text.
         if command == "validate":
             print("SLOVODEL_ERROR: " + str(error), file=sys.stderr)
             return 3
         raise
-    except ProfileError as error:
-        print("SLOVODEL_ERROR: " + str(error), file=sys.stderr)
-        return 3
     except DataError as error:
         print("SLOVODEL_ERROR: " + str(error), file=sys.stderr)
         return 3 if str(error).startswith("INPUT_") else 4
