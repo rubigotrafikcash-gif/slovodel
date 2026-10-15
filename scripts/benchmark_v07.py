@@ -13,7 +13,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "skills" / "slovodel"))
-from slovodel_core.reports import audit  # noqa: E402
+from slovodel_core.reports import audit, compare  # noqa: E402
 from slovodel_core import __version__  # noqa: E402
 
 
@@ -60,7 +60,24 @@ def benchmark() -> dict:
             "v07_sentence_position": measurements["a7_golden_section_sentence_ordinal"]["value"],
             "historical_full_text_score_comparability": "NOT_COMPARABLE_EXCERPT_ONLY"
         })
+    pair_runs = []
+    for item in cases.get("word_pair_cases", []):
+        before, after = item["before"], item["after"]
+        comparison = compare(before.encode("utf-8"), before,
+                             after.encode("utf-8"), after)
+        diffs = {m["id"]: m for m in comparison["comparisons"]}
+        pair_runs.append({
+            "id": item["id"], "before": before, "after": after,
+            "core_token_count_delta": diffs["token_count"]["delta"],
+            "core_vowels_per_word_delta":
+                diffs["russian_syllables_per_token_mean"]["delta"],
+            "historical_phonosemantic_delta": None,
+            "historical_emotional_comparison": "NOT_COMPARABLE",
+            "source": item["source"]
+        })
     return {
+        "zh_before_after_pair_executions": len(pair_runs),
+        "zh_before_after_results": pair_runs,
         "ch_short_excerpts_executed_v07": len(excerpt_runs),
         "ch_short_excerpt_runs": excerpt_runs,
         "benchmark_version": "v0.7.0",
@@ -94,7 +111,7 @@ def main() -> int:
         destination.parent.mkdir(parents=True, exist_ok=True)
         with destination.open("x", encoding="utf-8") as handle:
             handle.write(payload)
-    print("PRIMARY_BENCHMARK: PASS 10 word/scale examples + 2 Cherepanova excerpts; 6 full texts NOT_RUN")
+    print("PRIMARY_BENCHMARK: PASS 10 word/scale examples + 2 Zhuravlev pairs + 2 Cherepanova excerpts; 6 full texts NOT_RUN")
     return 0
 
 
