@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare source fingerprints; no linguistic delta metrics are implemented."""
+"""Compare compatible numeric measurements without historic/semantic scores."""
 from pathlib import Path
 import sys
 
