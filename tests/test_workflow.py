@@ -189,7 +189,22 @@ class WorkflowsE2ETests(unittest.TestCase):
             result = self.run_mode(mode, *args)
             self.assertIn(result.returncode, (0, 5))
             with self.subTest(mode=mode):
-                v.validate(json.loads(result.stdout))
+                bundle = json.loads(result.stdout)
+                v.validate(bundle)
+                for report_name, schema_name in (
+                    ("pre_analysis", "analysis.schema.json"),
+                    ("post_analysis", "analysis.schema.json"),
+                    ("comparison", "compare.schema.json"),
+                    ("fact_guard", "fact-guard.schema.json"),
+                ):
+                    nested = bundle[report_name]
+                    if nested is None:
+                        continue
+                    nested_schema = json.loads(
+                        (ROOT / "schemas" / schema_name).read_text(encoding="utf-8")
+                    )
+                    Draft202012Validator.check_schema(nested_schema)
+                    Draft202012Validator(nested_schema).validate(nested)
 
     def test_file_is_unchanged_all_modes(self):
         a = self.file("a.txt", "Нельзя менять условия.")
