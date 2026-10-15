@@ -241,6 +241,53 @@ class A2UnitTests(unittest.TestCase):
             self.assertTrue(all(x["delta"]==0 for x in compared["comparisons"]))
             self.assertIn("LOCAL_REFERENCE_NOT_NORMATIVE",compared["warnings"])
 
+    def test_profile_json_schema_full_validation(self):
+        # stdlib invariants always run; full Draft 2020-12 checks when available.
+        schema_path = ROOT / "schemas/local-reference.schema.json"
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        profile = fixture("мама мыла раму")
+        self.assertEqual(set(profile), set(schema["required"]))
+        self.assertFalse(schema["additionalProperties"])
+        self.assertEqual(set(profile["counts"]), set(schema["properties"]["counts"]["required"]))
+        try:
+            from jsonschema import Draft202012Validator
+        except ImportError:
+            return
+        Draft202012Validator.check_schema(schema)
+        validator = Draft202012Validator(schema)
+        validator.validate(profile)
+        invalid = dict(profile, profile_kind="verified_normative")
+        with self.assertRaises(Exception):
+            validator.validate(invalid)
+
+    def test_unknown_json_key_and_wrong_preprocessing_rejected(self):
+        p=fixture()
+        p["unauthorised_score"]=99
+        with self.assertRaisesRegex(ProfileError, "PROFILE_INVALID_SHAPE"):
+            parse_profile(json.dumps(p))
+        p=fixture()
+        p["preprocessing"]="change_yo_to_e"
+        with self.assertRaisesRegex(ProfileError, "PROFILE_INVALID_METHOD"):
+            parse_profile(json.dumps(p))
+
+    def test_compare_rejects_mismatched_reference_version(self):
+        with tempfile.TemporaryDirectory() as td:
+            home=Path(td)
+            source=home/"text.txt"
+            source.write_text("текст",encoding="utf-8")
+            profile=fixture()
+            profile["method_version"]="old-method"
+            reference=home/"profile.json"
+            reference.write_text(json.dumps(profile),encoding="utf-8")
+            result=subprocess.run(
+                [sys.executable,str(COMPARE),"--before",str(source),
+                 "--after",str(source),"--reference",str(reference)],
+                capture_output=True,text=True,encoding="utf-8",timeout=12,
+            )
+            self.assertEqual(result.returncode,3)
+            self.assertIn("PROFILE_VERSION_MISMATCH",result.stderr)
+            self.assertEqual(result.stdout,"")
+
     def test_local_reference_requires_explicit_optin(self):
         p=fixture()
         profile,digest=parse_profile(json.dumps(p))
