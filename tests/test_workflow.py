@@ -80,6 +80,11 @@ class WorkflowsE2ETests(unittest.TestCase):
         self.assertEqual([x for x in report["fact_guard"]["findings"]
                           if x["kind"] == "money"][0]["removed_count"], 1)
         self.assertEqual(report["fact_guard"]["decision"], "blocked")
+        self.assertEqual(report["fact_guard"]["source_sha256"],
+                         hashlib.sha256(before.read_bytes()).hexdigest())
+        self.assertEqual(report["fact_guard"]["revision_sha256"],
+                         hashlib.sha256(after.read_bytes()).hexdigest())
+        self.assertEqual(report["fact_guard"]["protected_terms_count"], 0)
         self.assertFalse(report["publication_ready"])
         self.assertEqual(report["steps_executed"],
                          ["analyze_original", "check_agent_edit_facts",
