@@ -11,11 +11,11 @@ PROTOCOL = ROOT / "evals/agent-test-protocol.md"
 class AgentEvidenceIntegrityTests(unittest.TestCase):
     def test_18_synthetic_responses_with_no_external_pass_claim(self):
         text = LOG.read_text(encoding="utf-8")
-        blocks = re.findall(r"(?m)^## (A\\d{2}) · (audit|rewrite|create|compare)\\n", text)
+        blocks = re.findall(r"(?m)^## (A[0-9]{2}) · (audit|rewrite|create|compare)$", text)
         self.assertEqual(len(blocks), 18)
         self.assertEqual(len(set(blocks)), 18)
         self.assertEqual(text.count("**Фактический ответ GPT-6 в сессии:**"), 18)
-        self.assertEqual(text.count("SELF_REVIEW_PASS"), 18+1)
+        self.assertEqual(text.count("SELF_REVIEW_PASS"), 18)
         self.assertEqual(text.count("независимый агентский прогон: NOT_RUN"),18)
         self.assertIn("НЕ установлен",text)
         self.assertIn("0 независимых прогонов",text)
