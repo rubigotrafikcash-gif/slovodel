@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/rubigotrafikcash-gif/slovodel/blob/main/schemas/analysis.schema.json",
+  "title": "Slovodel audit report v1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "tool_version",
+    "mode",
+    "language",
+    "language_detection",
+    "source_sha256",
+    "source",
+    "source_policy",
+    "measurements",
+    "historical_compatibility",
+    "warnings",
+    "errors"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "tool_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mode": {
+      "const": "audit"
+    },
+    "language": {
+      "const": "ru"
+    },
+    "language_detection": {
+      "const": "not_performed"
+    },
+    "source_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "source": {
+      "$ref": "#/$defs/source"
+    },
+    "source_policy": {
+      "$ref": "#/$defs/policy"
+    },
+    "measurements": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/measurement"
+      }
+    },
+    "historical_compatibility": {
+      "const": "not_verified"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sha256",
+        "size_bytes",
+        "normalization",
+        "normalization_changed",
+        "offset_map_status"
+      ],
+      "properties": {
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1048576
+        },
+        "normalization": {
+          "const": "NFC"
+        },
+        "normalization_changed": {
+          "type": "boolean"
+        },
+        "offset_map_status": {
+          "const": "not_implemented"
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "network_access",
+        "raw_text_in_report",
+        "storage"
+      ],
+      "properties": {
+        "network_access": {
+          "const": false
+        },
+        "raw_text_in_report": {
+          "const": false
+        },
+        "storage": {
+          "const": "memory_only_unless_output_selected"
+        }
+      }
+    },
+    "measurement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "value",
+        "unit",
+        "status",
+        "method_id",
+        "method_version",
+        "dataset_id",
+        "n",
+        "warnings"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "value": {
+          "type": [
+            "number",
+            "integer",
+            "null"
+          ]
+        },
+        "unit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "enum": [
+            "reproducible",
+            "qualitative",
+            "experimental",
+            "unavailable"
+          ]
+        },
+        "method_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "method_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "dataset_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "n": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "unavailable"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "null"
+              },
+              "unit": {
+                "type": "null"
+              },
+              "method_id": {
+                "type": "null"
+              },
+              "method_version": {
+                "type": "null"
+              },
+              "dataset_id": {
+                "type": "null"
+              },
+              "n": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
