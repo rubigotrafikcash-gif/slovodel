@@ -44,7 +44,6 @@ def audit(raw: bytes, decoded: str,
             ["ORTHOGRAPHIC_NOT_PHONETIC",
              "URL_EMAIL_EXCLUSION_HEURISTIC",
              "NO_NORMATIVE_CORPUS"] +
-                (["LOCAL_REFERENCE_NOT_NORMATIVE"] if reference else []) +
             (["LOCAL_REFERENCE_NOT_NORMATIVE"] if reference else []),
         "errors": [],
     }
@@ -59,7 +58,9 @@ def compare(
     pairs = []
     warnings = ["ORTHOGRAPHIC_NOT_PHONETIC",
                 "URL_EMAIL_EXCLUSION_HEURISTIC",
-                "NO_NORMATIVE_CORPUS"]
+                "NO_NORMATIVE_CORPUS"] + (
+                    ["LOCAL_REFERENCE_NOT_NORMATIVE"] if reference else []
+                )
     for identifier, first in before_items.items():
         second = after_items[identifier]
         # Only measurements with matching method and dataset are comparable.
