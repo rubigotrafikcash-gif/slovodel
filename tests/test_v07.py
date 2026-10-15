@@ -67,6 +67,8 @@ class CopywriterV07(unittest.TestCase):
             self.assertEqual(run.returncode,0,run.stderr[:250])
             data=json.loads(destination.read_text(encoding="utf-8"))
             self.assertEqual(data["z_word_scale_cases_executed"],10)
+            self.assertEqual(data["ch_short_excerpts_executed_v07"],2)
+            self.assertTrue(all(x["historical_full_text_score_comparability"] == "NOT_COMPARABLE_EXCERPT_ONLY" for x in data["ch_short_excerpt_runs"]))
             self.assertEqual(data["ch_full_texts_executed_v07"],0)
             self.assertIsNone(data["historical_algorithm_similarity_percent"])
 
