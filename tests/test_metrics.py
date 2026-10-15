@@ -166,6 +166,25 @@ class MetricReferenceTests(unittest.TestCase):
             self.assertEqual(m["status"], "unavailable")
             self.assertIsNone(m["value"])
 
+    def test_nfc_equivalent_text_same_measurements(self):
+        first = {m["id"]: (m["status"], m["value"]) for m in calculate("е\\u0308ж")}
+        second = {m["id"]: (m["status"], m["value"]) for m in calculate("ёж")}
+        self.assertEqual(first, second)
+
+    def test_full_alphabet_has_33_independent_count_metrics(self):
+        sample = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
+        measures = {m["id"]: m for m in calculate(sample)}
+        keys = [k for k in measures if k.startswith("letter_") and k.endswith("_count")]
+        self.assertEqual(len(keys), 33)
+        self.assertEqual(measures["russian_letter_count"]["value"], 33)
+        self.assertTrue(all(measures[k]["value"] == 1 for k in keys))
+
+    def test_one_letter_text_has_no_five_token_windows(self):
+        self.assertEqual(metric("Я", "russian_token_count")["value"], 1)
+        self.assertEqual(metric("Я", "russian_syllables_per_token_mean")["value"], 1.0)
+        self.assertEqual(metric("Я", "onset_window_count")["value"], 0)
+        self.assertEqual(metric("Я", "golden_section_token_index")["value"], 1)
+
     def test_unicode_cluster_is_explicitly_approximate(self):
         sample = "э\u0301 ☺\ufe0f"
         count = metric(sample, "base_mark_cluster_count")
