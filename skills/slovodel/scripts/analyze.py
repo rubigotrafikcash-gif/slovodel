@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the offline audit scaffold; no linguistic scores are implemented yet."""
+"""Run the offline audit with reproducible orthographic counts (not Diaton)."""
 from pathlib import Path
 import sys
 
