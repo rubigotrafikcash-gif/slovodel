@@ -1,0 +1,259 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/rubigotrafikcash-gif/slovodel/blob/main/schemas/local-reference.schema.json",
+  "title": "Self-declared non-normative local Russian letter reference profile v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source_label",
+    "source_url",
+    "genre",
+    "corpus_version",
+    "license_id",
+    "rights_basis",
+    "format",
+    "profile_kind",
+    "license_status",
+    "source_sha256",
+    "method_version",
+    "preprocessing",
+    "total_letters",
+    "counts"
+  ],
+  "properties": {
+    "source_label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "\\S"
+    },
+    "source_url": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "\\S"
+    },
+    "genre": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "\\S"
+    },
+    "corpus_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "\\S"
+    },
+    "license_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "\\S"
+    },
+    "rights_basis": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "\\S"
+    },
+    "format": {
+      "const": "slovodel.local-letter-reference.v1"
+    },
+    "profile_kind": {
+      "const": "user_supplied_non_normative"
+    },
+    "license_status": {
+      "const": "self_declared_unverified"
+    },
+    "source_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "method_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "preprocessing": {
+      "const": "NFC+exclude_URL_email+casefold+count_RU33"
+    },
+    "total_letters": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "а",
+        "б",
+        "в",
+        "г",
+        "д",
+        "е",
+        "ё",
+        "ж",
+        "з",
+        "и",
+        "й",
+        "к",
+        "л",
+        "м",
+        "н",
+        "о",
+        "п",
+        "р",
+        "с",
+        "т",
+        "у",
+        "ф",
+        "х",
+        "ц",
+        "ч",
+        "ш",
+        "щ",
+        "ъ",
+        "ы",
+        "ь",
+        "э",
+        "ю",
+        "я"
+      ],
+      "properties": {
+        "а": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "б": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "в": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "г": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "д": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "е": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ё": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ж": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "з": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "и": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "й": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "к": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "л": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "м": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "н": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "о": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "п": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "р": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "с": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "т": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "у": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ф": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "х": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ц": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ч": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ш": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "щ": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ъ": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ы": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ь": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "э": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ю": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "я": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  },
+  "description": "Integrity and total sum also checked by a2.validate; schema does not prove rights or normativity."
+}
