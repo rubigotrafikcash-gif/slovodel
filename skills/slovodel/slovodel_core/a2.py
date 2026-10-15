@@ -9,7 +9,6 @@ from __future__ import annotations
 from collections import Counter
 import hashlib
 import json
-import math
 import unicodedata
 
 from . import METHOD_VERSION
@@ -160,7 +159,10 @@ def compare_rate(observed: int, observed_total: int,
 def calculate_reference(text: str, profile: dict, dataset_id: str) -> list[dict]:
     """Generate explicitly *local-reference* metrics, never normative scores."""
     validate(profile)
-    if not dataset_id.startswith("local-sha256:"):
+    if (not isinstance(dataset_id, str)
+            or not dataset_id.startswith("local-sha256:")
+            or len(dataset_id) != 77
+            or any(ch not in "0123456789abcdef" for ch in dataset_id[13:])):
         raise ProfileError("PROFILE_INVALID_DATASET_ID")
     counts = count_letters(text)
     total = sum(counts.values())
