@@ -6,7 +6,7 @@
 
 ## План развития публичной версии (15.10.2026)
 
-Зафиксирована поэтапная разработка **публичного локального навыка**: измерительный Python Core, воспроизводимые метрики и проверка правок. **Состояние по Issue #5:** Python Core v0.3.0 содержит A1/A3/A4/A6/A7 и формулы A2 для **необязательного локального пользовательского эталона**. Подтверждённой общей нормы русского языка и включённого в репозиторий корпуса **нет**: `norm_letter_deviation` остаётся `unavailable/null`. Морфология, фонетика и исторические шкалы по-прежнему не реализованы. Приватный MCP/API, n8n, VPS и работа на домашнем сервере отложены.
+Зафиксирована поэтапная разработка **публичного локального навыка**: измерительный Python Core, воспроизводимые метрики и проверка правок. **Состояние по Issue #6:** Python Core v0.4.0 содержит A1/A3/A4/A6/A7, пользовательскую ненормативную A2 и **отключаемую морфологию A5** через локально устанавливаемый `pymorphy3`. Без `--morphology` и пакета остальные измерения работают как раньше. Общерусской нормативной базы по-прежнему нет; исторические и фонетические шкалы не реализованы. Приватный MCP/API, n8n, VPS и работа на домашнем сервере отложены.
 
 - [Принятые решения и ограничения](docs/PROJECT_DECISIONS.md)
 - [Техническая спецификация публичной версии](docs/PUBLIC_TECHNICAL_SPEC.md)
@@ -27,21 +27,23 @@ skills/slovodel/references/methodology.md
 skills/slovodel/references/cli-contract.md
 skills/slovodel/references/metrics-contract.md
 skills/slovodel/references/a2-contract.md
+skills/slovodel/references/morphology-contract.md
+skills/slovodel/references/morphology-licenses.md
 skills/slovodel/references/corpus-license-review.md
 skills/slovodel/resources/corpora/README.md
 skills/slovodel/scripts/{analyze,compare,build_reference}.py
 skills/slovodel/slovodel_core/
 schemas/{analysis,compare,local-reference}.schema.json
-tests/{test_cli,test_metrics,test_a2}.py
+tests/{test_cli,test_metrics,test_a2,test_morphology}.py
 pyproject.toml
 evals/cases.md
 README.md
 LICENSE
 ```
 
-`SKILL.md` задаёт пять режимов: `audit` (диагностика без правки), `rewrite` (редактирование с контролем фактов), `create` (черновик по брифу), `compare` (сравнение двух версий), `historical_research` (источниковедческая справка). Справочники уточняют форматы, ограничения и примеры. `evals/cases.md` содержит **25 ручных сценариев**, но наличие сценариев **не означает успешного выполнения тестов**. В репозитории есть офлайн-скрипты и реализованные базовые **орфографические** измерители; нормативные корпуса, морфология и исторические алгоритмы не входят в текущую версию. Внешние запросы, серверы и ключи не требуются.
+`SKILL.md` задаёт пять режимов: `audit` (диагностика без правки), `rewrite` (редактирование с контролем фактов), `create` (черновик по брифу), `compare` (сравнение двух версий), `historical_research` (источниковедческая справка). Справочники уточняют форматы, ограничения и примеры. `evals/cases.md` содержит **25 ручных сценариев**, но наличие сценариев **не означает успешного выполнения тестов**. В репозитории есть офлайн-скрипты и базовые **орфографические** измерители, а также необязательная морфология для подсчёта частей речи с явным учётом неоднозначности. Встроенных нормативных корпусов и исторических алгоритмов нет. Внешние запросы, серверы и ключи не требуются.
 
-## Локальный Python Core (Issue #4, v0.2.0)
+## Локальный Python Core (v0.4.0)
 
 На машине с Python ≥3.10, **без установки сторонних пакетов**:
 
@@ -56,6 +58,18 @@ python -m unittest discover -s tests -v
 ## A2 — локальные частоты, без внешнего корпуса
 
 Корпусные таблицы **не встроены**. При желании можно создать профиль из собственных текстов: `python skills/slovodel/scripts/build_reference.py --help`. Для `analyze.py` и `compare.py` параметр `--reference profile.json` включает математические отклонения от **этого конкретного локального профиля**. Профиль не объявляется нормативным, а лицензия источника заявляется пользователем и не проверяется автоматически. Пример использования: [A2 contract](skills/slovodel/references/a2-contract.md), [сверка лицензий](skills/slovodel/references/corpus-license-review.md).
+
+## A5 — необязательный POS-анализ русского текста
+
+```bash
+# Только при необходимости: сторонний движок MIT + отдельно лицензированный CC BY-SA словарь
+python -m pip install pymorphy3==2.0.6 pymorphy3-dicts-ru==2.4.417150.4580142
+
+python skills/slovodel/scripts/analyze.py --input post.txt --morphology
+python skills/slovodel/scripts/compare.py --before old.txt --after new.txt --morphology
+```
+
+Без установки и флага POS остаётся `unavailable/null`, **при этом все другие вычисления доступны**. Известные словарю неоднозначные слова выводятся отдельной категорией, а не приписываются к произвольной части речи. [Контракт A5](skills/slovodel/references/morphology-contract.md), [лицензии источников](skills/slovodel/references/morphology-licenses.md).
 
 ## Использование
 
