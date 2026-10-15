@@ -16,6 +16,9 @@ on:
       - "tests/test_agent_eval_manifest.py"
       - "tests/fixtures/**"
       - "scripts/**"
+      - "skills/slovodel/schemas/**"
+      - "skills/slovodel/LICENSE"
+      - "skills/slovodel/references/install.md"
       - ".coveragerc"
       - "skills/slovodel/SKILL.md"
       - "skills/slovodel/references/cli-contract.md"
@@ -83,6 +86,8 @@ jobs:
           python -m coverage json --include="*/slovodel_core/metrics.py,*/slovodel_core/a2.py,*/slovodel_core/fact_guard.py,*/slovodel_core/reports.py,*/slovodel_core/workflow.py" -o test-results/coverage.json
       - name: Save machine-readable unit/regression results
         run: python scripts/quality_report.py --output test-results/unittest-results.json
+      - name: Isolated installed skill smoke (Codex/Claude folder layouts, no agent auth)
+        run: python scripts/release_smoke.py --output test-results/portable-install.json
       - name: No-network smoke (socket functions disabled, synthetic texts)
         run: python scripts/offline_smoke.py
       - name: Ensure no network module use in runtime core
@@ -113,5 +118,6 @@ jobs:
           path: |
             test-results/coverage.json
             test-results/unittest-results.json
+            test-results/portable-install.json
           if-no-files-found: warn
           retention-days: 30
