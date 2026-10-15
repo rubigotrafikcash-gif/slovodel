@@ -227,5 +227,25 @@
       "comparability": "not_whole_text",
       "note": "Short published fragment only, not an input to the original full-text calculation."
     }
+  ],
+  "word_pair_cases": [
+    {
+      "id": "zh-pair-01",
+      "before": "храп",
+      "after": "прах",
+      "source": "А. П. Журавлёв, Звук и смысл, 1991, с. 31–34, https://ru.scribd.com/document/735405357/",
+      "purpose": "First/last sound-order contrast discussed by author",
+      "expected_historical_result": "not_available",
+      "not_an_editing_quality_judgement": true
+    },
+    {
+      "id": "zh-pair-02",
+      "before": "хилый",
+      "after": "милый",
+      "source": "А. П. Журавлёв, Звук и смысл, 1991, с. 31–34, https://ru.scribd.com/document/735405357/",
+      "purpose": "First-sound replacement discussed by author",
+      "expected_historical_result": "not_available",
+      "not_an_editing_quality_judgement": true
+    }
   ]
 }
