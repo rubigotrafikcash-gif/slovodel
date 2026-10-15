@@ -207,5 +207,25 @@
   ],
   "historical_program_executed": false,
   "historical_equivalence": "NOT_VERIFIED",
-  "comment": "No full books, photographs, protected phonosemantic tables or third-party text corpora are bundled."
+  "comment": "No full books, photographs, protected phonosemantic tables or third-party text corpora are bundled.",
+  "excerpt_cases": [
+    {
+      "id": "ch-ex-01",
+      "title": "Княгиня Ольга",
+      "input": "В деле смелая",
+      "source": "И. Ю. Черепанова, Заговор народа, с. 81–83, https://ru.scribd.com/document/937681099/",
+      "expected_kind": "published_golden_section_excerpt",
+      "comparability": "not_whole_text",
+      "note": "Short published fragment only; does not reproduce original full-text golden-section position."
+    },
+    {
+      "id": "ch-ex-02",
+      "title": "Стрелок, достигающий цели",
+      "input": "Пространство и время окружают его целями, но он определяет главные",
+      "source": "И. Ю. Черепанова, Заговор народа, с. 81–83, https://ru.scribd.com/document/937681099/",
+      "expected_kind": "published_golden_section_excerpt",
+      "comparability": "not_whole_text",
+      "note": "Short published fragment only, not an input to the original full-text calculation."
+    }
+  ]
 }
