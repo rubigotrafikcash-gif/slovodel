@@ -27,7 +27,8 @@ def source_policy() -> dict:
     }
 
 
-def audit(raw: bytes, decoded: str) -> dict:
+def audit(raw: bytes, decoded: str,
+          reference: tuple[dict, str] | None = None) -> dict:
     return {
         "schema_version": SCHEMA_VERSION,
         "tool_version": __version__,
@@ -37,21 +38,24 @@ def audit(raw: bytes, decoded: str) -> dict:
         "source_sha256": hashlib.sha256(raw).hexdigest(),
         "source": source_info(raw, decoded),
         "source_policy": source_policy(),
-        "measurements": calculate(decoded),
+        "measurements": calculate(decoded, reference=reference),
         "historical_compatibility": "not_verified",
         "warnings": (["EMPTY_INPUT"] if not decoded else []) +
             ["ORTHOGRAPHIC_NOT_PHONETIC",
              "URL_EMAIL_EXCLUSION_HEURISTIC",
-             "NO_NORMATIVE_CORPUS"],
+             "NO_NORMATIVE_CORPUS"] +
+                (["LOCAL_REFERENCE_NOT_NORMATIVE"] if reference else []) +
+            (["LOCAL_REFERENCE_NOT_NORMATIVE"] if reference else []),
         "errors": [],
     }
 
 
 def compare(
-    before_raw: bytes, before: str, after_raw: bytes, after: str
+    before_raw: bytes, before: str, after_raw: bytes, after: str,
+    reference: tuple[dict, str] | None = None
 ) -> dict:
-    before_items = {item["id"]: item for item in calculate(before)}
-    after_items = {item["id"]: item for item in calculate(after)}
+    before_items = {item["id"]: item for item in calculate(before, reference=reference)}
+    after_items = {item["id"]: item for item in calculate(after, reference=reference)}
     pairs = []
     warnings = ["ORTHOGRAPHIC_NOT_PHONETIC",
                 "URL_EMAIL_EXCLUSION_HEURISTIC",
