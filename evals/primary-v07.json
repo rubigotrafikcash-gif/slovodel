@@ -1,0 +1,251 @@
+{
+  "format": "slovodel.primary-v0.7.v1",
+  "scope": "research regression; source words only; no copyrighted full chapter reproduction",
+  "protocol": "Words are actually remeasured with Core v0.7; text values are v0.6 historical audit baseline only, because exact licensed full inputs are not committed.",
+  "word_cases": [
+    {
+      "id": "zh-01",
+      "input": "лик",
+      "scale": "красивый — отталкивающий",
+      "published": 2,
+      "published_kind": "calculated_book_example",
+      "source": "А. П. Журавлёв, Звук и смысл (1991), с. 32–36; https://ru.scribd.com/document/735405357/",
+      "expected_status": "historical_metric_unavailable",
+      "comparability": "not_comparable",
+      "note": "Published value is phonosemantic scale score, not a spelling metric."
+    },
+    {
+      "id": "zh-02",
+      "input": "храп",
+      "scale": "хороший — плохой",
+      "published": 3.8,
+      "published_kind": "calculated_book_example",
+      "source": "А. П. Журавлёв, Звук и смысл (1991), с. 32–36; https://ru.scribd.com/document/735405357/",
+      "expected_status": "historical_metric_unavailable",
+      "comparability": "not_comparable",
+      "note": "Published value is phonosemantic scale score, not a spelling metric."
+    },
+    {
+      "id": "zh-03",
+      "input": "урщух",
+      "scale": "безопасный — страшный",
+      "published": 3.8,
+      "published_kind": "respondent_average",
+      "source": "А. П. Журавлёв, Звук и смысл (1991), с. 32–36; https://ru.scribd.com/document/735405357/",
+      "expected_status": "historical_metric_unavailable",
+      "comparability": "not_comparable",
+      "note": "Published value is phonosemantic scale score, not a spelling metric."
+    },
+    {
+      "id": "zh-04",
+      "input": "лимень",
+      "scale": "безопасный — страшный",
+      "published": 2.1,
+      "published_kind": "respondent_average",
+      "source": "А. П. Журавлёв, Звук и смысл (1991), с. 32–36; https://ru.scribd.com/document/735405357/",
+      "expected_status": "historical_metric_unavailable",
+      "comparability": "not_comparable",
+      "note": "Published value is phonosemantic scale score, not a spelling metric."
+    },
+    {
+      "id": "zh-05",
+      "input": "манаф",
+      "scale": "хороший — плохой",
+      "published": 3.4,
+      "published_kind": "calculated_book_example",
+      "source": "А. П. Журавлёв, Звук и смысл (1991), с. 32–36; https://ru.scribd.com/document/735405357/",
+      "expected_status": "historical_metric_unavailable",
+      "comparability": "not_comparable",
+      "note": "Published value is phonosemantic scale score, not a spelling metric."
+    },
+    {
+      "id": "zh-06",
+      "input": "хифель",
+      "scale": "подвижный — медлительный",
+      "published": 3.7,
+      "published_kind": "calculated_book_example",
+      "source": "А. П. Журавлёв, Звук и смысл (1991), с. 32–36; https://ru.scribd.com/document/735405357/",
+      "expected_status": "historical_metric_unavailable",
+      "comparability": "not_comparable",
+      "note": "Published value is phonosemantic scale score, not a spelling metric."
+    },
+    {
+      "id": "zh-07",
+      "input": "хифель",
+      "scale": "хороший — плохой",
+      "published": 4.2,
+      "published_kind": "calculated_book_example",
+      "source": "А. П. Журавлёв, Звук и смысл (1991), с. 32–36; https://ru.scribd.com/document/735405357/",
+      "expected_status": "historical_metric_unavailable",
+      "comparability": "not_comparable",
+      "note": "Published value is phonosemantic scale score, not a spelling metric."
+    },
+    {
+      "id": "zh-08",
+      "input": "хифель",
+      "scale": "безопасный — страшный",
+      "published": 3.6,
+      "published_kind": "calculated_book_example",
+      "source": "А. П. Журавлёв, Звук и смысл (1991), с. 32–36; https://ru.scribd.com/document/735405357/",
+      "expected_status": "historical_metric_unavailable",
+      "comparability": "not_comparable",
+      "note": "Published value is phonosemantic scale score, not a spelling metric."
+    },
+    {
+      "id": "zh-09",
+      "input": "фрыш",
+      "scale": "сильный — слабый",
+      "published": 3.7,
+      "published_kind": "calculated_book_example",
+      "source": "А. П. Журавлёв, Звук и смысл (1991), с. 32–36; https://ru.scribd.com/document/735405357/",
+      "expected_status": "historical_metric_unavailable",
+      "comparability": "not_comparable",
+      "note": "Published value is phonosemantic scale score, not a spelling metric."
+    },
+    {
+      "id": "zh-10",
+      "input": "незич",
+      "scale": "яркий — тусклый",
+      "published": 2.5,
+      "published_kind": "calculated_book_example",
+      "source": "А. П. Журавлёв, Звук и смысл (1991), с. 32–36; https://ru.scribd.com/document/735405357/",
+      "expected_status": "historical_metric_unavailable",
+      "comparability": "not_comparable",
+      "note": "Published value is phonosemantic scale score, not a spelling metric."
+    }
+  ],
+  "text_cases": [
+    {
+      "id": "ch-01",
+      "title": "Княгиня Ольга",
+      "source": "И. Ю. Черепанова, Заговор народа (2002), с. 81–83; https://ru.scribd.com/document/937681099/",
+      "published_mean_syllables": 3.45,
+      "previous_core_v06_orthographic_vowels_per_token": 2.4,
+      "previous_core_v06_golden_overlap": true,
+      "previous_core_v06_token_count": 78,
+      "previous_core_v06_golden_index": 48,
+      "status": "historical_baseline_only",
+      "v07_full_text_reexecution": "NOT_RUN_COPIED_SOURCE_TEXT_NOT_STORED",
+      "comparability": "different_token_and_syllable_methods",
+      "note": "Numbers recorded in independent audit of v0.6 from available digital publication; do not treat as new v0.7 measurements."
+    },
+    {
+      "id": "ch-02",
+      "title": "Стрелок, достигающий цели",
+      "source": "И. Ю. Черепанова, Заговор народа (2002), с. 81–83; https://ru.scribd.com/document/937681099/",
+      "published_mean_syllables": 2.45,
+      "previous_core_v06_orthographic_vowels_per_token": 2.35,
+      "previous_core_v06_golden_overlap": false,
+      "previous_core_v06_token_count": 88,
+      "previous_core_v06_golden_index": 54,
+      "status": "historical_baseline_only",
+      "v07_full_text_reexecution": "NOT_RUN_COPIED_SOURCE_TEXT_NOT_STORED",
+      "comparability": "different_token_and_syllable_methods",
+      "note": "Numbers recorded in independent audit of v0.6 from available digital publication; do not treat as new v0.7 measurements."
+    },
+    {
+      "id": "ch-03",
+      "title": "Победитель",
+      "source": "И. Ю. Черепанова, Заговор народа (2002), с. 81–83; https://ru.scribd.com/document/937681099/",
+      "published_mean_syllables": 2.33,
+      "previous_core_v06_orthographic_vowels_per_token": 2.2,
+      "previous_core_v06_golden_overlap": true,
+      "previous_core_v06_token_count": 215,
+      "previous_core_v06_golden_index": 133,
+      "status": "historical_baseline_only",
+      "v07_full_text_reexecution": "NOT_RUN_COPIED_SOURCE_TEXT_NOT_STORED",
+      "comparability": "different_token_and_syllable_methods",
+      "note": "Numbers recorded in independent audit of v0.6 from available digital publication; do not treat as new v0.7 measurements."
+    },
+    {
+      "id": "ch-04",
+      "title": "Обретение имени",
+      "source": "И. Ю. Черепанова, Заговор народа (2002), с. 81–83; https://ru.scribd.com/document/937681099/",
+      "published_mean_syllables": 2.64,
+      "previous_core_v06_orthographic_vowels_per_token": 2.58,
+      "previous_core_v06_golden_overlap": true,
+      "previous_core_v06_token_count": 109,
+      "previous_core_v06_golden_index": 67,
+      "status": "historical_baseline_only",
+      "v07_full_text_reexecution": "NOT_RUN_COPIED_SOURCE_TEXT_NOT_STORED",
+      "comparability": "different_token_and_syllable_methods",
+      "note": "Numbers recorded in independent audit of v0.6 from available digital publication; do not treat as new v0.7 measurements."
+    },
+    {
+      "id": "ch-05",
+      "title": "Мастер",
+      "source": "И. Ю. Черепанова, Заговор народа (2002), с. 81–83; https://ru.scribd.com/document/937681099/",
+      "published_mean_syllables": 2.1,
+      "previous_core_v06_orthographic_vowels_per_token": 1.98,
+      "previous_core_v06_golden_overlap": true,
+      "previous_core_v06_token_count": 54,
+      "previous_core_v06_golden_index": 33,
+      "status": "historical_baseline_only",
+      "v07_full_text_reexecution": "NOT_RUN_COPIED_SOURCE_TEXT_NOT_STORED",
+      "comparability": "different_token_and_syllable_methods",
+      "note": "Numbers recorded in independent audit of v0.6 from available digital publication; do not treat as new v0.7 measurements."
+    },
+    {
+      "id": "ch-06",
+      "title": "Легенда о воине",
+      "source": "И. Ю. Черепанова, Заговор народа (2002), с. 81–83; https://ru.scribd.com/document/937681099/",
+      "published_mean_syllables": 2.03,
+      "previous_core_v06_orthographic_vowels_per_token": 1.9,
+      "previous_core_v06_golden_overlap": false,
+      "previous_core_v06_token_count": 104,
+      "previous_core_v06_golden_index": 64,
+      "status": "historical_baseline_only",
+      "v07_full_text_reexecution": "NOT_RUN_COPIED_SOURCE_TEXT_NOT_STORED",
+      "comparability": "different_token_and_syllable_methods",
+      "note": "Numbers recorded in independent audit of v0.6 from available digital publication; do not treat as new v0.7 measurements."
+    }
+  ],
+  "citation_urls": [
+    "https://ru.scribd.com/document/735405357/",
+    "https://ru.scribd.com/document/937681099/",
+    "https://psyjournals.ru/journals/langt/archive/2025_n4/Rogozhnikova"
+  ],
+  "historical_program_executed": false,
+  "historical_equivalence": "NOT_VERIFIED",
+  "comment": "No full books, photographs, protected phonosemantic tables or third-party text corpora are bundled.",
+  "excerpt_cases": [
+    {
+      "id": "ch-ex-01",
+      "title": "Княгиня Ольга",
+      "input": "В деле смелая",
+      "source": "И. Ю. Черепанова, Заговор народа, с. 81–83, https://ru.scribd.com/document/937681099/",
+      "expected_kind": "published_golden_section_excerpt",
+      "comparability": "not_whole_text",
+      "note": "Short published fragment only; does not reproduce original full-text golden-section position."
+    },
+    {
+      "id": "ch-ex-02",
+      "title": "Стрелок, достигающий цели",
+      "input": "Пространство и время окружают его целями, но он определяет главные",
+      "source": "И. Ю. Черепанова, Заговор народа, с. 81–83, https://ru.scribd.com/document/937681099/",
+      "expected_kind": "published_golden_section_excerpt",
+      "comparability": "not_whole_text",
+      "note": "Short published fragment only, not an input to the original full-text calculation."
+    }
+  ],
+  "word_pair_cases": [
+    {
+      "id": "zh-pair-01",
+      "before": "храп",
+      "after": "прах",
+      "source": "А. П. Журавлёв, Звук и смысл, 1991, с. 31–34, https://ru.scribd.com/document/735405357/",
+      "purpose": "First/last sound-order contrast discussed by author",
+      "expected_historical_result": "not_available",
+      "not_an_editing_quality_judgement": true
+    },
+    {
+      "id": "zh-pair-02",
+      "before": "хилый",
+      "after": "милый",
+      "source": "А. П. Журавлёв, Звук и смысл, 1991, с. 31–34, https://ru.scribd.com/document/735405357/",
+      "purpose": "First-sound replacement discussed by author",
+      "expected_historical_result": "not_available",
+      "not_an_editing_quality_judgement": true
+    }
+  ]
+}
