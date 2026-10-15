@@ -139,7 +139,9 @@ def onset_windows(ru_words: list[str]) -> tuple[int, int]:
     return count, flagged
 
 
-def calculate(decoded: str, reference: tuple[dict, str] | None = None) -> list[dict]:
+def calculate(decoded: str, reference: tuple[dict, str] | None = None,
+              morphology: tuple[object, str] | None = None,
+              morphology_reason: str = "MORPHOLOGY_OPT_IN_REQUIRED") -> list[dict]:
     """Ordered list of aggregate, provenance-tagged metrics."""
     text = unicodedata.normalize("NFC", decoded)
     safe = cleaned(text)
@@ -231,9 +233,13 @@ def calculate(decoded: str, reference: tuple[dict, str] | None = None) -> list[d
     if reference is not None:
         from .a2 import calculate_reference
         metrics.extend(calculate_reference(decoded, reference[0], reference[1]))
+    if morphology is not None:
+        from .morphology import calculate_pos
+        metrics.extend(calculate_pos(decoded, morphology))
+    else:
+        metrics.append(unavailable("pos_distribution", morphology_reason))
     metrics.extend([
         unavailable("norm_letter_deviation", "NORMATIVE_CORPUS_NOT_AVAILABLE"),
-        unavailable("pos_distribution", "MORPHOLOGY_NOT_IMPLEMENTED"),
         unavailable("historical_suggestive_score",
                     "HISTORICAL_METHOD_NOT_VERIFIED"),
     ])
