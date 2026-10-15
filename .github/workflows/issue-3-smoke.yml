@@ -80,7 +80,9 @@ jobs:
           python -m coverage run --source=skills/slovodel/slovodel_core -m unittest discover -s tests -q
           python -m coverage report --include="*/slovodel_core/metrics.py,*/slovodel_core/a2.py,*/slovodel_core/fact_guard.py,*/slovodel_core/reports.py,*/slovodel_core/workflow.py" --show-missing --fail-under=90
           python -m coverage json --include="*/slovodel_core/metrics.py,*/slovodel_core/a2.py,*/slovodel_core/fact_guard.py,*/slovodel_core/reports.py,*/slovodel_core/workflow.py" -o test-results/coverage.json
-      - name: No-network smoke (socket functions disabled, synthetic files)
+      - name: Save machine-readable unit/regression results
+        run: python scripts/quality_report.py --output test-results/unittest-results.json
+      - name: No-network smoke (socket functions disabled, synthetic texts)
         run: python scripts/offline_smoke.py
       - name: Ensure no network module use in runtime core
         run: |
@@ -107,6 +109,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: quality-python-${{ matrix.python-version }}
-          path: test-results/coverage.json
+          path: |
+            test-results/coverage.json
+            test-results/unittest-results.json
           if-no-files-found: warn
           retention-days: 30
