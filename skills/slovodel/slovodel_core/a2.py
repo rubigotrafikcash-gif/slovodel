@@ -11,7 +11,7 @@ import hashlib
 import json
 import unicodedata
 
-from . import METHOD_VERSION
+PROFILE_METHOD_VERSION = "0.3.0"  # Profile contract unchanged by A5
 from .metrics import RU_ALPHABET, RU_LETTERS, cleaned, measurement, unavailable
 
 PROFILE_FORMAT = "slovodel.local-letter-reference.v1"
@@ -63,7 +63,7 @@ def make_profile(
         "license_id": license_id,
         "rights_basis": rights_basis,
         "source_sha256": hashlib.sha256(raw).hexdigest(),
-        "method_version": METHOD_VERSION,
+        "method_version": PROFILE_METHOD_VERSION,
         "preprocessing": "NFC+exclude_URL_email+casefold+count_RU33",
         "total_letters": total,
         "counts": counts,
@@ -94,7 +94,7 @@ def validate(profile: object) -> dict:
             or profile["preprocessing"]
                 != "NFC+exclude_URL_email+casefold+count_RU33"):
         raise ProfileError("PROFILE_INVALID_METHOD")
-    if profile["method_version"] != METHOD_VERSION:
+    if profile["method_version"] != PROFILE_METHOD_VERSION:
         raise ProfileError("PROFILE_VERSION_MISMATCH")
     digest = profile["source_sha256"]
     if (not isinstance(digest, str) or len(digest) != 64
