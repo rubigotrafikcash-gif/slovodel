@@ -1,4 +1,4 @@
-# Установка публичного «СловоДела» — v0.6.0
+# Установка публичного «СловоДела» — v0.7.0
 
 **Одна папка `slovodel/` — полный автономный пакет навыка**: `SKILL.md`, `LICENSE`, `references/`, `assets/`, `scripts/`, `slovodel_core/`, `schemas/`. Python не нужен для качественной редактуры: AI-агент читает инструкции и оформляет текст. Для проверяемых числовых расчётов требуется **Python 3.10+** в среде агента и разрешение на локальный запуск скриптов.
 
@@ -11,7 +11,7 @@
 Сначала скачай **конкретную опубликованную версию** в отдельную временную директорию. Для Linux/macOS (с установленным Git):
 
 ```bash
-git clone --depth 1 --branch v0.6.0 https://github.com/rubigotrafikcash-gif/slovodel.git slovodel-release
+git clone --depth 1 --branch v0.7.0 https://github.com/rubigotrafikcash-gif/slovodel.git slovodel-release
 
 # Установить в Codex (один раз, если такого каталога ещё нет):
 mkdir -p "$HOME/.agents/skills"
@@ -27,7 +27,7 @@ cp -R slovodel-release/skills/slovodel "$HOME/.claude/skills/slovodel"
 Для Windows PowerShell:
 
 ```powershell
-git clone --depth 1 --branch v0.6.0 https://github.com/rubigotrafikcash-gif/slovodel.git slovodel-release
+git clone --depth 1 --branch v0.7.0 https://github.com/rubigotrafikcash-gif/slovodel.git slovodel-release
 
 # Codex:
 New-Item -ItemType Directory -Force "$HOME/.agents/skills" | Out-Null
@@ -77,4 +77,4 @@ python "$HOME/.agents/skills/slovodel/scripts/analyze.py" --help
 
 GitHub Actions ставит **копию одной папки** `skills/slovodel` в два временных дерева с путями Codex и Claude Code, убирает возможность использовать остальные файлы репозитория как импортируемые модули, запускает четыре режима Python из третьего каталога с `python -I`, проверяет JSON и `blocked` на разнице сумм, сводит версии внешних и встроенных схем. Проверка выполняется без реальных учётных данных. Это **подтверждённая проверка переносимости каталога и исполняемого слоя**, но **НЕ** запуск самих моделей Codex/Claude и не тест реального выбора навыка из меню, которые могут требовать установленный клиент и авторизацию.
 
-Выпуск `v0.6.0` содержит проверенный публичный пакет; следи за [GitHub Release](https://github.com/rubigotrafikcash-gif/slovodel/releases). Не копируй в публичный репозиторий пользовательские исходники/скриншоты/токены.
+Выпуск `v0.7.0` содержит проверенный публичный пакет; следи за [GitHub Release](https://github.com/rubigotrafikcash-gif/slovodel/releases). Не копируй в публичный репозиторий пользовательские исходники/скриншоты/токены.
