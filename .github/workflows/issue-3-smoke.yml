@@ -1,4 +1,4 @@
-name: Public Slovodel offline metrics and fact guard
+name: Public Slovodel offline modes and guard
 on:
   pull_request:
     paths:
@@ -10,12 +10,18 @@ on:
       - "tests/test_a2.py"
       - "tests/test_morphology.py"
       - "tests/test_fact_guard.py"
+      - "tests/test_workflow.py"
       - "skills/slovodel/SKILL.md"
       - "skills/slovodel/references/cli-contract.md"
       - "skills/slovodel/references/metrics-contract.md"
       - "skills/slovodel/references/a2-contract.md"
       - "skills/slovodel/references/morphology-contract.md"
       - "skills/slovodel/references/fact-guard-contract.md"
+      - "skills/slovodel/references/agent-workflow.md"
+      - "skills/slovodel/references/formats.md"
+      - "skills/slovodel/references/workflows.md"
+      - "skills/slovodel/references/examples.md"
+      - "evals/cases.md"
       - "skills/slovodel/references/morphology-licenses.md"
       - "skills/slovodel/references/corpus-license-review.md"
       - "skills/slovodel/resources/corpora/README.md"
@@ -25,6 +31,7 @@ on:
       - "docs/ISSUE_5_VERIFICATION.md"
       - "docs/ISSUE_6_VERIFICATION.md"
       - "docs/ISSUE_7_VERIFICATION.md"
+      - "docs/ISSUE_8_VERIFICATION.md"
       - "docs/ISSUE_3_VERIFICATION.md"
       - ".github/workflows/issue-3-smoke.yml"
   workflow_dispatch:
@@ -44,6 +51,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Four-mode CLI smoke
+        run: python skills/slovodel/scripts/workflow.py --help
       - name: Fact guard CLI smoke
         run: python skills/slovodel/scripts/validate.py --help
       - name: Run offline standard-library tests
