@@ -6,6 +6,7 @@ only hashes, aggregate statistics and protected-fact categories.
 """
 from __future__ import annotations
 
+import hashlib
 import re
 
 from . import __version__
@@ -16,6 +17,19 @@ SCHEMA = "1.0.0"
 MODES = ("audit", "rewrite", "create", "compare")
 # Detect explicitly unresolved placeholders; not a complete factual validator.
 PLACEHOLDER = re.compile(r"\[[^\[\]\n]{1,120}\]")
+
+
+def guard_report(
+    original: tuple[bytes, str],
+    revision: tuple[bytes, str],
+    terms: tuple[str, ...],
+) -> dict:
+    """Match standalone validate.py fact-guard schema exactly."""
+    report = check_facts(original[1], revision[1], terms)
+    report["source_sha256"] = hashlib.sha256(original[0]).hexdigest()
+    report["revision_sha256"] = hashlib.sha256(revision[0]).hexdigest()
+    report["protected_terms_count"] = len(terms)
+    return report
 
 
 def build(
@@ -67,8 +81,8 @@ def build(
         report["warnings"].append("BRIEF_FACTS_NOT_AUTOMATICALLY_VERIFIED")
     elif mode == "rewrite":
         report["pre_analysis"] = audit(*before_doc, **kw)
-        report["fact_guard"] = check_facts(before_doc[1], after_doc[1],
-                                          protected_terms)
+        report["fact_guard"] = guard_report(before_doc, after_doc,
+                                             protected_terms)
         report["post_analysis"] = audit(*after_doc, **kw)
         report["comparison"] = compare(
             *before_doc, *after_doc, **kw
@@ -87,8 +101,8 @@ def build(
         report["pre_analysis"] = audit(*before_doc, **kw)
         report["post_analysis"] = audit(*after_doc, **kw)
         report["comparison"] = compare(*before_doc, *after_doc, **kw)
-        report["fact_guard"] = check_facts(before_doc[1], after_doc[1],
-                                          protected_terms)
+        report["fact_guard"] = guard_report(before_doc, after_doc,
+                                             protected_terms)
         report["steps_executed"] = [
             "analyze_first", "analyze_second",
             "compare_reproducible_metrics", "screen_fact_differences"
