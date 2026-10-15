@@ -36,7 +36,7 @@ class HistoricalAuditIntegrityTests(unittest.TestCase):
                 self.assertEqual(item["runtime_status"], "unavailable")
                 self.assertIsNone(item["runtime_value"])
                 self.assertNotEqual(item["research_status"], "reproducible")
-                self.assertIn("unverified", item["license_status"])
+                self.assertEqual(item["license_status"], "redistribution_permission_not_verified")
                 self.assertTrue(item["decision"])
 
     def test_references_and_formula_data_fields(self):
