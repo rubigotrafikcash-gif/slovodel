@@ -34,7 +34,7 @@ class OfflineCliTests(unittest.TestCase):
         )
 
     def test_audit_contract_raw_bytes_unchanged(self):
-        raw = "е\u0301, ё. Пример".encode("utf-8")
+        raw = "е\u0308, ё. Пример".encode("utf-8")
         path = self.file("input.txt", raw)
         result = self.call(ANALYZE, "--input", path, "--mode", "audit")
         self.assertEqual(result.returncode, 0, result.stderr)
