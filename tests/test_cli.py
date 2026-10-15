@@ -99,6 +99,28 @@ class OfflineCliTests(unittest.TestCase):
         self.assertEqual(result.returncode, 3)
         self.assertIn("INPUT_SYMLINK", result.stderr)
 
+    def test_fifo_input_rejected_without_blocking(self):
+        import os
+        fifo = self.tmp / "pipe"
+        if not hasattr(os, "mkfifo"):
+            self.skipTest("FIFO unsupported on this OS")
+        os.mkfifo(fifo)
+        result = self.call(ANALYZE, "--input", fifo)
+        self.assertEqual(result.returncode, 3)
+        self.assertIn("INPUT_NOT_REGULAR_FILE", result.stderr)
+
+    def test_output_symlink_never_overwrites_target(self):
+        source = self.file("input.txt", b"DATA")
+        target = self.file("target.json", b"PROTECTED")
+        link = self.tmp / "out.json"
+        try:
+            link.symlink_to(target)
+        except (OSError, NotImplementedError):
+            self.skipTest("OS does not allow symlinks")
+        result = self.call(ANALYZE, "--input", source, "--output", link)
+        self.assertEqual(result.returncode, 4)
+        self.assertEqual(target.read_bytes(), b"PROTECTED")
+
     def test_empty_file_warning(self):
         path = self.file("empty.txt", b"")
         result = self.call(ANALYZE, "--input", path)
