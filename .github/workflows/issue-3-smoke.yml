@@ -6,6 +6,7 @@ on:
       - "skills/slovodel/slovodel_core/**"
       - "schemas/**"
       - "tests/test_cli.py"
+      - "docs/ISSUE_3_VERIFICATION.md"
       - ".github/workflows/issue-3-smoke.yml"
   workflow_dispatch:
 
