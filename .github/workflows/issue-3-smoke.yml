@@ -7,6 +7,12 @@ on:
       - "schemas/**"
       - "tests/test_cli.py"
       - "tests/test_metrics.py"
+      - "skills/slovodel/SKILL.md"
+      - "skills/slovodel/references/cli-contract.md"
+      - "skills/slovodel/references/metrics-contract.md"
+      - "README.md"
+      - "pyproject.toml"
+      - "docs/ISSUE_4_VERIFICATION.md"
       - "docs/ISSUE_3_VERIFICATION.md"
       - ".github/workflows/issue-3-smoke.yml"
   workflow_dispatch:
