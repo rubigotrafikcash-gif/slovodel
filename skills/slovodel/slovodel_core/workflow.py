@@ -6,7 +6,6 @@ only hashes, aggregate statistics and protected-fact categories.
 """
 from __future__ import annotations
 
-import hashlib
 import re
 
 from . import __version__
@@ -38,9 +37,6 @@ def build(
     else:
         if input_doc is not None or before_doc is None or after_doc is None:
             raise ValueError("WORKFLOW_MISSING_OR_EXTRA_INPUT")
-        if mode == "compare" and protected_terms:
-            # Compare uses the same protected screening as rewrite.
-            pass
     kw = {"reference": reference, "morphology": morphology,
           "morphology_reason": morphology_reason}
     report = {
