@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "slovodel-core"
-version = "0.1.0"
-description = "Offline, deterministic report scaffold for the public Slovodel skill"
+version = "0.2.0"
+description = "Offline deterministic orthographic text metrics for the public Slovodel skill"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}

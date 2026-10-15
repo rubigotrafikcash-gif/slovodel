@@ -47,10 +47,13 @@ class OfflineCliTests(unittest.TestCase):
         self.assertNotIn("Пример", result.stdout)
         self.assertEqual(report["historical_compatibility"], "not_verified")
         self.assertFalse(report["source_policy"]["network_access"])
-        self.assertTrue(all(
-            m["status"] == "unavailable" and m["value"] is None
-            for m in report["measurements"]
-        ))
+        results = {m["id"]: m for m in report["measurements"]}
+        self.assertEqual(results["token_count"]["status"], "reproducible")
+        self.assertEqual(results["historical_suggestive_score"]["status"],
+                         "unavailable")
+        self.assertIsNone(results["historical_suggestive_score"]["value"])
+        self.assertEqual(results["norm_letter_deviation"]["status"],
+                         "unavailable")
 
     def test_same_input_deterministic(self):
         path = self.file("input.txt", "Мама мыла раму".encode())
@@ -65,8 +68,12 @@ class OfflineCliTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         report = json.loads(result.stdout)
         self.assertEqual(report["before"]["sha256"], report["after"]["sha256"])
-        self.assertEqual(report["comparison_status"], "unavailable")
-        self.assertEqual(report["comparisons"], [])
+        self.assertEqual(report["comparison_status"], "completed")
+        self.assertGreater(len(report["comparisons"]), 0)
+        self.assertTrue(all(item["delta"] == 0
+                            for item in report["comparisons"]))
+        self.assertFalse(any(item["id"] == "historical_suggestive_score"
+                             for item in report["comparisons"]))
         self.assertEqual(report["mode"], "compare")
 
     def test_bad_encoding_does_not_echo_data(self):

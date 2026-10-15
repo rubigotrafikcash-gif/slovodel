@@ -12,7 +12,7 @@ from .reports import audit, compare
 def execute(command: str, args: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="slovodel-" + command,
-        description="Offline Slovodel report scaffold; no historical scores.",
+        description="Offline Slovodel orthographic metrics; no historical scores.",
     )
     if command == "analyze":
         parser.add_argument("--input", required=True)
