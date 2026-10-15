@@ -68,6 +68,8 @@ class CopywriterV07(unittest.TestCase):
             data=json.loads(destination.read_text(encoding="utf-8"))
             self.assertEqual(data["z_word_scale_cases_executed"],10)
             self.assertEqual(data["ch_short_excerpts_executed_v07"],2)
+            self.assertEqual(data["zh_before_after_pair_executions"],2)
+            self.assertTrue(all(x["core_token_count_delta"] == 0 and x["core_vowels_per_word_delta"] == 0 and x["historical_phonosemantic_delta"] is None for x in data["zh_before_after_results"]))
             self.assertTrue(all(x["historical_full_text_score_comparability"] == "NOT_COMPARABLE_EXCERPT_ONLY" for x in data["ch_short_excerpt_runs"]))
             self.assertEqual(data["ch_full_texts_executed_v07"],0)
             self.assertIsNone(data["historical_algorithm_similarity_percent"])
