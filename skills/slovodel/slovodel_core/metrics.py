@@ -139,7 +139,7 @@ def onset_windows(ru_words: list[str]) -> tuple[int, int]:
     return count, flagged
 
 
-def calculate(decoded: str) -> list[dict]:
+def calculate(decoded: str, reference: tuple[dict, str] | None = None) -> list[dict]:
     """Ordered list of aggregate, provenance-tagged metrics."""
     text = unicodedata.normalize("NFC", decoded)
     safe = cleaned(text)
@@ -228,6 +228,9 @@ def calculate(decoded: str) -> list[dict]:
             ["NO_PSYCHOLOGICAL_EFFECT_INFERRED"])
     else:
         metrics.append(unavailable("golden_section_token_index", "NO_TOKENS"))
+    if reference is not None:
+        from .a2 import calculate_reference
+        metrics.extend(calculate_reference(decoded, reference[0], reference[1]))
     metrics.extend([
         unavailable("norm_letter_deviation", "NORMATIVE_CORPUS_NOT_AVAILABLE"),
         unavailable("pos_distribution", "MORPHOLOGY_NOT_IMPLEMENTED"),
