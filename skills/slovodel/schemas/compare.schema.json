@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/rubigotrafikcash-gif/slovodel/blob/main/schemas/compare.schema.json",
+  "title": "Slovodel compare report v1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "tool_version",
+    "mode",
+    "language",
+    "language_detection",
+    "source_policy",
+    "before",
+    "after",
+    "measurement_method_version",
+    "comparison_status",
+    "comparisons",
+    "historical_compatibility",
+    "warnings",
+    "errors"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "tool_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mode": {
+      "const": "compare"
+    },
+    "language": {
+      "const": "ru"
+    },
+    "language_detection": {
+      "const": "not_performed"
+    },
+    "source_policy": {
+      "$ref": "#/$defs/policy"
+    },
+    "before": {
+      "$ref": "#/$defs/source"
+    },
+    "after": {
+      "$ref": "#/$defs/source"
+    },
+    "measurement_method_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "comparison_status": {
+      "enum": [
+        "unavailable",
+        "completed"
+      ]
+    },
+    "comparisons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "before",
+          "after",
+          "delta",
+          "unit",
+          "method_id",
+          "method_version",
+          "dataset_id",
+          "n_before",
+          "n_after",
+          "warnings"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "before": {
+            "type": "number"
+          },
+          "after": {
+            "type": "number"
+          },
+          "delta": {
+            "type": "number"
+          },
+          "unit": {
+            "type": "string",
+            "minLength": 1
+          },
+          "method_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "method_version": {
+            "type": "string",
+            "minLength": 1
+          },
+          "dataset_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "n_before": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "n_after": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "historical_compatibility": {
+      "const": "not_verified"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sha256",
+        "size_bytes",
+        "normalization",
+        "normalization_changed",
+        "offset_map_status"
+      ],
+      "properties": {
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1048576
+        },
+        "normalization": {
+          "const": "NFC"
+        },
+        "normalization_changed": {
+          "type": "boolean"
+        },
+        "offset_map_status": {
+          "const": "not_implemented"
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "network_access",
+        "raw_text_in_report",
+        "storage"
+      ],
+      "properties": {
+        "network_access": {
+          "const": false
+        },
+        "raw_text_in_report": {
+          "const": false
+        },
+        "storage": {
+          "const": "memory_only_unless_output_selected"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "comparison_status": {
+            "const": "unavailable"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "comparisons": {
+            "maxItems": 0
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "comparison_status": {
+            "const": "completed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "comparisons": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ]
+}

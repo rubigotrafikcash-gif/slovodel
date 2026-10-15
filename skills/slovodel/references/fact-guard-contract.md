@@ -48,7 +48,7 @@ python skills/slovodel/scripts/validate.py --before original.txt --after edited.
 
 ## JSON-контракт и приватность
 
-[schemas/fact-guard.schema.json](https://github.com/rubigotrafikcash-gif/slovodel/blob/main/schemas/fact-guard.schema.json) описывает **отдельный** от лингвистического отчёта формат:
+[schemas/fact-guard.schema.json](../schemas/fact-guard.schema.json) описывает **отдельный** от лингвистического отчёта формат:
 
 ```json
 {
