@@ -6,7 +6,7 @@
 
 ## План развития публичной версии (15.10.2026)
 
-Зафиксирована поэтапная разработка **публичного локального навыка**: измерительный Python Core, воспроизводимые метрики и проверка правок. **Состояние по Issue #6:** Python Core v0.4.0 содержит A1/A3/A4/A6/A7, пользовательскую ненормативную A2 и **отключаемую морфологию A5** через локально устанавливаемый `pymorphy3`. Без `--morphology` и пакета остальные измерения работают как раньше. Общерусской нормативной базы по-прежнему нет; исторические и фонетические шкалы не реализованы. Приватный MCP/API, n8n, VPS и работа на домашнем сервере отложены.
+Зафиксирована поэтапная разработка **публичного локального навыка**: измерительный Python Core, воспроизводимые метрики и проверка правок. **Состояние по Issue #7:** Python Core v0.5.0 содержит прежние метрики A1–A7 и отдельный **детерминированный скрининг защищённых фактов A8** через `validate.py`. Он блокирует обнаруженные изменения, но **не доказывает смысловую эквивалентность** и не разрешает публикацию самостоятельно. Без `--morphology` и пакета остальные измерения работают как раньше. Общерусской нормативной базы по-прежнему нет; исторические и фонетические шкалы не реализованы. Приватный MCP/API, n8n, VPS и работа на домашнем сервере отложены.
 
 - [Принятые решения и ограничения](docs/PROJECT_DECISIONS.md)
 - [Техническая спецификация публичной версии](docs/PUBLIC_TECHNICAL_SPEC.md)
@@ -28,13 +28,14 @@ skills/slovodel/references/cli-contract.md
 skills/slovodel/references/metrics-contract.md
 skills/slovodel/references/a2-contract.md
 skills/slovodel/references/morphology-contract.md
+skills/slovodel/references/fact-guard-contract.md
 skills/slovodel/references/morphology-licenses.md
 skills/slovodel/references/corpus-license-review.md
 skills/slovodel/resources/corpora/README.md
-skills/slovodel/scripts/{analyze,compare,build_reference}.py
+skills/slovodel/scripts/{analyze,compare,build_reference,validate}.py
 skills/slovodel/slovodel_core/
-schemas/{analysis,compare,local-reference}.schema.json
-tests/{test_cli,test_metrics,test_a2,test_morphology}.py
+schemas/{analysis,compare,local-reference,fact-guard}.schema.json
+tests/{test_cli,test_metrics,test_a2,test_morphology,test_fact_guard}.py
 pyproject.toml
 evals/cases.md
 README.md
@@ -43,7 +44,7 @@ LICENSE
 
 `SKILL.md` задаёт пять режимов: `audit` (диагностика без правки), `rewrite` (редактирование с контролем фактов), `create` (черновик по брифу), `compare` (сравнение двух версий), `historical_research` (источниковедческая справка). Справочники уточняют форматы, ограничения и примеры. `evals/cases.md` содержит **25 ручных сценариев**, но наличие сценариев **не означает успешного выполнения тестов**. В репозитории есть офлайн-скрипты и базовые **орфографические** измерители, а также необязательная морфология для подсчёта частей речи с явным учётом неоднозначности. Встроенных нормативных корпусов и исторических алгоритмов нет. Внешние запросы, серверы и ключи не требуются.
 
-## Локальный Python Core (v0.4.0)
+## Локальный Python Core (v0.5.0)
 
 На машине с Python ≥3.10, **без установки сторонних пакетов**:
 
@@ -70,6 +71,17 @@ python skills/slovodel/scripts/compare.py --before old.txt --after new.txt --mor
 ```
 
 Без установки и флага POS остаётся `unavailable/null`, **при этом все другие вычисления доступны**. Известные словарю неоднозначные слова выводятся отдельной категорией, а не приписываются к произвольной части речи. [Контракт A5](skills/slovodel/references/morphology-contract.md), [лицензии источников](skills/slovodel/references/morphology-licenses.md).
+
+## A8 — контроль фактов при правке
+
+Перед тем как считать переписанный текст готовым, сравни исходник и вариант:
+
+```bash
+python skills/slovodel/scripts/validate.py --before original.txt --after edited.txt
+python skills/slovodel/scripts/validate.py --before original.txt --after edited.txt --protected-file protected.txt
+```
+
+Команда вернёт JSON `blocked` (код выхода **5**) при изменении обнаруженных сумм, ссылок, дат, чисел, сроков, условий, имён и других защищённых элементов. `review_required` означает, что **автоматически не обнаружено** таких изменений, но экспертная проверка смысла всё равно необходима. Нет полного семантического анализа, автоматического допуска к публикации или разрешения правовых вопросов. [Подробный контракт A8](skills/slovodel/references/fact-guard-contract.md).
 
 ## Использование
 
