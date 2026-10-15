@@ -12,6 +12,9 @@ license = {text = "MIT"}
 authors = [{name = "TairPromo contributors"}]
 dependencies = []
 
+[project.optional-dependencies]
+morphology = ["pymorphy3==2.0.6", "pymorphy3-dicts-ru==2.4.417150.4580142"]
+
 [tool.setuptools]
 package-dir = {"" = "skills/slovodel"}
 packages = ["slovodel_core"]
