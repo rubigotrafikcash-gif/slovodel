@@ -48,7 +48,21 @@ def benchmark() -> dict:
     six = cases["text_cases"]
     if len(six) != 6 or any(item["v07_full_text_reexecution"] != "NOT_RUN_COPIED_SOURCE_TEXT_NOT_STORED" for item in six):
         raise AssertionError("SOURCE_TEXT_PROVENANCE_INVALID")
+    excerpt_runs = []
+    for sample in cases.get("excerpt_cases", []):
+        snippet = sample["input"]
+        report = audit(snippet.encode("utf-8"), snippet)
+        measurements = {m["id"]: m for m in report["measurements"]}
+        excerpt_runs.append({
+            "id": sample["id"], "title": sample["title"],
+            "input": snippet, "v07_russian_tokens": measurements["russian_token_count"]["value"],
+            "v07_orthographic_mean": measurements["russian_syllables_per_token_mean"]["value"],
+            "v07_sentence_position": measurements["a7_golden_section_sentence_ordinal"]["value"],
+            "historical_full_text_score_comparability": "NOT_COMPARABLE_EXCERPT_ONLY"
+        })
     return {
+        "ch_short_excerpts_executed_v07": len(excerpt_runs),
+        "ch_short_excerpt_runs": excerpt_runs,
         "benchmark_version": "v0.7.0",
         "engine_version": __version__,
         "result": "PASS_WORD_REEXECUTION_NOT_COMPARABLE_TO_HISTORIC_SCORES",
@@ -80,7 +94,7 @@ def main() -> int:
         destination.parent.mkdir(parents=True, exist_ok=True)
         with destination.open("x", encoding="utf-8") as handle:
             handle.write(payload)
-    print("PRIMARY_BENCHMARK: PASS 10 word/scale examples; historical scores unavailable; 6 text baselines NOT_RUN")
+    print("PRIMARY_BENCHMARK: PASS 10 word/scale examples + 2 Cherepanova excerpts; 6 full texts NOT_RUN")
     return 0
 
 
