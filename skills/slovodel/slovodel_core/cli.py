@@ -27,6 +27,11 @@ def execute(command: str, args: list[str] | None = None) -> int:
         parser.add_argument("--reference", help="Local profile JSON (not normative).")
         parser.add_argument("--morphology", action="store_true",
                             help="Optional local pymorphy3 POS; no network.")
+    elif command == "validate":
+        parser.add_argument("--before", required=True)
+        parser.add_argument("--after", required=True)
+        parser.add_argument("--protected-file",
+                            help="UTF-8 lines of essential phrases (max 100).")
     elif command == "build-reference":
         parser.add_argument("--input", required=True)
         for arg in (
@@ -40,7 +45,20 @@ def execute(command: str, args: list[str] | None = None) -> int:
     parser.add_argument("--output", help="Create a new JSON file (never overwrite).")
     namespace = parser.parse_args(args)
     try:
-        if command == "build-reference":
+        if command == "validate":
+            import hashlib
+            from .fact_guard import check, validate_terms
+            before_raw, before = read_text(namespace.before)
+            after_raw, after = read_text(namespace.after)
+            terms = ()
+            if namespace.protected_file is not None:
+                _, term_text = read_text(namespace.protected_file)
+                terms = validate_terms(term_text.splitlines())
+            document = check(before, after, terms)
+            document["source_sha256"] = hashlib.sha256(before_raw).hexdigest()
+            document["revision_sha256"] = hashlib.sha256(after_raw).hexdigest()
+            document["protected_terms_count"] = len(terms)
+        elif command == "build-reference":
             raw, decoded = read_text(namespace.input)
             document = make_profile(
                 raw, decoded,
@@ -76,7 +94,13 @@ def execute(command: str, args: list[str] | None = None) -> int:
             document, ensure_ascii=False, sort_keys=True, indent=2
         )
         emit_json(serialized, namespace.output)
-        return 0
+        return 5 if command == "validate" and document["decision"] == "blocked" else 0
+    except ValueError as error:
+        # validate_terms uses fixed codes only; never echo arbitrary user text.
+        if command == "validate":
+            print("SLOVODEL_ERROR: " + str(error), file=sys.stderr)
+            return 3
+        raise
     except ProfileError as error:
         print("SLOVODEL_ERROR: " + str(error), file=sys.stderr)
         return 3
