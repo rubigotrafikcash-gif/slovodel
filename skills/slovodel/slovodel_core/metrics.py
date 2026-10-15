@@ -169,8 +169,6 @@ def calculate(decoded: str) -> list[dict]:
     for ch in RU_ALPHABET:
         add("letter_" + ch + "_count", letter_counts[ch], "letters",
             n_letters, "a1.letters")
-    add("letter_е_count", letter_counts["е"], "letters",
-        n_letters, "a1.letters") if False else None  # covered in alphabet
     # A3: repeated textual letter sequences; never call them phonemes.
     for size in (2, 3):
         types, excess = letter_ngram_stats(ru_words, size)
