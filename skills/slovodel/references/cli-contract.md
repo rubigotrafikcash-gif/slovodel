@@ -35,7 +35,7 @@ python -m unittest discover -s tests -v
 
 ## Опциональный A2
 
-Дополнительно доступен `scripts/build_reference.py`: строит локальный профиль частот без исходного текста, с пользовательским описанием источника, версии, лицензии и основания прав. При `analyze.py --reference profile.json` и `compare.py --reference profile.json` рассчитываются отдельные `local_ref_*` дельты и отношения; ни один источник не загружается из сети. Условия: [a2-contract.md](a2-contract.md), формат: [local-reference.schema.json](https://github.com/rubigotrafikcash-gif/slovodel/blob/main/schemas/local-reference.schema.json). Такие данные не считаются нормативными; `norm_letter_deviation` по умолчанию и с профилем недоступен.
+Дополнительно доступен `scripts/build_reference.py`: строит локальный профиль частот без исходного текста, с пользовательским описанием источника, версии, лицензии и основания прав. При `analyze.py --reference profile.json` и `compare.py --reference profile.json` рассчитываются отдельные `local_ref_*` дельты и отношения; ни один источник не загружается из сети. Условия: [a2-contract.md](a2-contract.md), формат: [local-reference.schema.json](../schemas/local-reference.schema.json). Такие данные не считаются нормативными; `norm_letter_deviation` по умолчанию и с профилем недоступен.
 
 ## Опциональный A5
 
