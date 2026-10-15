@@ -28,7 +28,9 @@ def source_policy() -> dict:
 
 
 def audit(raw: bytes, decoded: str,
-          reference: tuple[dict, str] | None = None) -> dict:
+          reference: tuple[dict, str] | None = None,
+          morphology: tuple[object, str] | None = None,
+          morphology_reason: str = "MORPHOLOGY_OPT_IN_REQUIRED") -> dict:
     return {
         "schema_version": SCHEMA_VERSION,
         "tool_version": __version__,
@@ -38,7 +40,9 @@ def audit(raw: bytes, decoded: str,
         "source_sha256": hashlib.sha256(raw).hexdigest(),
         "source": source_info(raw, decoded),
         "source_policy": source_policy(),
-        "measurements": calculate(decoded, reference=reference),
+        "measurements": calculate(decoded, reference=reference,
+                                  morphology=morphology,
+                                  morphology_reason=morphology_reason),
         "historical_compatibility": "not_verified",
         "warnings": (["EMPTY_INPUT"] if not decoded else []) +
             ["ORTHOGRAPHIC_NOT_PHONETIC",
@@ -51,10 +55,16 @@ def audit(raw: bytes, decoded: str,
 
 def compare(
     before_raw: bytes, before: str, after_raw: bytes, after: str,
-    reference: tuple[dict, str] | None = None
+    reference: tuple[dict, str] | None = None,
+    morphology: tuple[object, str] | None = None,
+    morphology_reason: str = "MORPHOLOGY_OPT_IN_REQUIRED"
 ) -> dict:
-    before_items = {item["id"]: item for item in calculate(before, reference=reference)}
-    after_items = {item["id"]: item for item in calculate(after, reference=reference)}
+    before_items = {item["id"]: item for item in calculate(before, reference=reference,
+                                             morphology=morphology,
+                                             morphology_reason=morphology_reason)}
+    after_items = {item["id"]: item for item in calculate(after, reference=reference,
+                                           morphology=morphology,
+                                           morphology_reason=morphology_reason)}
     pairs = []
     warnings = ["ORTHOGRAPHIC_NOT_PHONETIC",
                 "URL_EMAIL_EXCLUSION_HEURISTIC",

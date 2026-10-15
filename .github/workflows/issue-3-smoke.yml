@@ -1,4 +1,4 @@
-name: Public Slovodel offline metrics and corpus safeguards
+name: Public Slovodel offline metrics and optional POS
 on:
   pull_request:
     paths:
@@ -8,16 +8,20 @@ on:
       - "tests/test_cli.py"
       - "tests/test_metrics.py"
       - "tests/test_a2.py"
+      - "tests/test_morphology.py"
       - "skills/slovodel/SKILL.md"
       - "skills/slovodel/references/cli-contract.md"
       - "skills/slovodel/references/metrics-contract.md"
       - "skills/slovodel/references/a2-contract.md"
+      - "skills/slovodel/references/morphology-contract.md"
+      - "skills/slovodel/references/morphology-licenses.md"
       - "skills/slovodel/references/corpus-license-review.md"
       - "skills/slovodel/resources/corpora/README.md"
       - "README.md"
       - "pyproject.toml"
       - "docs/ISSUE_4_VERIFICATION.md"
       - "docs/ISSUE_5_VERIFICATION.md"
+      - "docs/ISSUE_6_VERIFICATION.md"
       - "docs/ISSUE_3_VERIFICATION.md"
       - ".github/workflows/issue-3-smoke.yml"
   workflow_dispatch:
@@ -42,6 +46,10 @@ jobs:
       - name: Validate reports against full JSON Schema Draft 2020-12
         run: |
           python -m pip install --disable-pip-version-check jsonschema==4.25.1
+          python -m unittest discover -s tests -v
+      - name: Install optional, pinned morphology backend (CI only)
+        run: |
+          python -m pip install --disable-pip-version-check pymorphy3==2.0.6 pymorphy3-dicts-ru==2.4.417150.4580142
           python -m unittest discover -s tests -v
       - name: Ensure no network module use in runtime core
         run: |

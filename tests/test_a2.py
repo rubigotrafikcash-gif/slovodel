@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SKILL = ROOT / "skills/slovodel"
 sys.path.insert(0, str(SKILL))
 
-from slovodel_core import METHOD_VERSION  # noqa: E402
+from slovodel_core.a2 import PROFILE_METHOD_VERSION  # noqa: E402
 from slovodel_core.a2 import (  # noqa: E402
     ProfileError, compare_rate, count_letters, make_profile, parse_profile,
     calculate_reference,
@@ -71,7 +71,7 @@ class A2UnitTests(unittest.TestCase):
         self.assertEqual(p["counts"]["ё"], 2)
         self.assertEqual(p["counts"]["е"], 1)
         self.assertEqual(sum(p["counts"].values()), p["total_letters"])
-        self.assertEqual(p["method_version"], METHOD_VERSION)
+        self.assertEqual(p["method_version"], PROFILE_METHOD_VERSION)
         self.assertEqual(p["license_status"], "self_declared_unverified")
         self.assertEqual(p["profile_kind"], "user_supplied_non_normative")
         self.assertNotIn("Ёж", json.dumps(p, ensure_ascii=False))
