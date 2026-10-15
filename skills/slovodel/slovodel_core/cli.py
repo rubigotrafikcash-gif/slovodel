@@ -19,6 +19,10 @@ def execute(command: str, args: list[str] | None = None) -> int:
         parser.add_argument("--input", required=True)
         parser.add_argument("--mode", choices=["audit"], default="audit")
         parser.add_argument("--reference", help="Local profile JSON (not normative).")
+        parser.add_argument("--morphology", action="store_true",
+                            help="Optional local pymorphy3 POS; no network.")
+        parser.add_argument("--morphology", action="store_true",
+                            help="Optional local pymorphy3 POS; no network.")
     elif command == "compare":
         parser.add_argument("--before", required=True)
         parser.add_argument("--after", required=True)
