@@ -1,0 +1,329 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/rubigotrafikcash-gif/slovodel/blob/main/schemas/workflow.schema.json",
+  "title": "Slovodel offline four-mode editorial evidence bundle 1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "workflow_schema_version",
+    "tool_version",
+    "mode",
+    "execution",
+    "ai_text_generation",
+    "publication_ready",
+    "decision",
+    "steps_executed",
+    "pre_analysis",
+    "post_analysis",
+    "comparison",
+    "fact_guard",
+    "warnings"
+  ],
+  "properties": {
+    "workflow_schema_version": {
+      "const": "1.0.0"
+    },
+    "tool_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mode": {
+      "enum": [
+        "audit",
+        "rewrite",
+        "create",
+        "compare"
+      ]
+    },
+    "execution": {
+      "const": "local_core_executed"
+    },
+    "ai_text_generation": {
+      "const": "external_to_this_workflow"
+    },
+    "publication_ready": {
+      "const": false
+    },
+    "decision": {
+      "enum": [
+        "audit_only",
+        "draft_requires_review",
+        "blocked",
+        "comparison_only"
+      ]
+    },
+    "steps_executed": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "pre_analysis": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/analysis"
+        }
+      ]
+    },
+    "post_analysis": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/analysis"
+        }
+      ]
+    },
+    "comparison": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/compare"
+        }
+      ]
+    },
+    "fact_guard": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/guard"
+        }
+      ]
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "analysis": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "tool_version",
+        "mode",
+        "source_sha256",
+        "measurements",
+        "historical_compatibility"
+      ],
+      "properties": {
+        "mode": {
+          "const": "audit"
+        },
+        "source_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "measurements": {
+          "type": "array"
+        },
+        "historical_compatibility": {
+          "const": "not_verified"
+        }
+      }
+    },
+    "compare": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "tool_version",
+        "mode",
+        "before",
+        "after",
+        "comparison_status",
+        "comparisons",
+        "historical_compatibility"
+      ],
+      "properties": {
+        "mode": {
+          "const": "compare"
+        },
+        "comparisons": {
+          "type": "array"
+        },
+        "comparison_status": {
+          "enum": [
+            "completed",
+            "unavailable"
+          ]
+        },
+        "historical_compatibility": {
+          "const": "not_verified"
+        }
+      }
+    },
+    "guard": {
+      "type": "object",
+      "required": [
+        "decision",
+        "publish_ready",
+        "semantic_equivalence",
+        "findings",
+        "warnings"
+      ],
+      "properties": {
+        "decision": {
+          "enum": [
+            "blocked",
+            "review_required",
+            "unchanged"
+          ]
+        },
+        "publish_ready": {
+          "const": false
+        },
+        "semantic_equivalence": {
+          "const": "not_verified"
+        },
+        "findings": {
+          "type": "array"
+        },
+        "warnings": {
+          "type": "array"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "audit"
+          }
+        },
+        "required": [
+          "mode"
+        ]
+      },
+      "then": {
+        "properties": {
+          "decision": {
+            "const": "audit_only"
+          },
+          "pre_analysis": {
+            "$ref": "#/$defs/analysis"
+          },
+          "post_analysis": {
+            "type": "null"
+          },
+          "comparison": {
+            "type": "null"
+          },
+          "fact_guard": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "create"
+          }
+        },
+        "required": [
+          "mode"
+        ]
+      },
+      "then": {
+        "properties": {
+          "decision": {
+            "const": "draft_requires_review"
+          },
+          "pre_analysis": {
+            "type": "null"
+          },
+          "post_analysis": {
+            "$ref": "#/$defs/analysis"
+          },
+          "comparison": {
+            "type": "null"
+          },
+          "fact_guard": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "rewrite"
+          }
+        },
+        "required": [
+          "mode"
+        ]
+      },
+      "then": {
+        "properties": {
+          "decision": {
+            "enum": [
+              "blocked",
+              "draft_requires_review"
+            ]
+          },
+          "pre_analysis": {
+            "$ref": "#/$defs/analysis"
+          },
+          "post_analysis": {
+            "$ref": "#/$defs/analysis"
+          },
+          "comparison": {
+            "$ref": "#/$defs/compare"
+          },
+          "fact_guard": {
+            "$ref": "#/$defs/guard"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "compare"
+          }
+        },
+        "required": [
+          "mode"
+        ]
+      },
+      "then": {
+        "properties": {
+          "decision": {
+            "const": "comparison_only"
+          },
+          "pre_analysis": {
+            "$ref": "#/$defs/analysis"
+          },
+          "post_analysis": {
+            "$ref": "#/$defs/analysis"
+          },
+          "comparison": {
+            "$ref": "#/$defs/compare"
+          },
+          "fact_guard": {
+            "$ref": "#/$defs/guard"
+          }
+        }
+      }
+    }
+  ]
+}
