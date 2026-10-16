@@ -37,11 +37,13 @@ def execute(argv: list[str] | None = None) -> int:
         if opts.reference:
             _, raw_json = read_text(opts.reference)
             reference = parse_profile(raw_json)
-        morphology, morphology_reason = None, "MORPHOLOGY_OPT_IN_REQUIRED"
+        morphology: tuple[object, str] | None = None
+        morphology_reason = "MORPHOLOGY_OPT_IN_REQUIRED"
         if opts.morphology:
             from .morphology import load_backend
-            morphology, morphology_reason = load_backend()
-        terms = ()
+            morphology, backend_reason = load_backend()
+            morphology_reason = backend_reason or morphology_reason
+        terms: tuple[str, ...] = ()
         if opts.protected_file:
             _, text = read_text(opts.protected_file)
             terms = validate_terms(text.splitlines())

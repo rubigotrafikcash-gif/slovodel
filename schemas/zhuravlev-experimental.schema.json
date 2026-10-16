@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/rubigotrafikcash-gif/slovodel/blob/main/schemas/zhuravlev-experimental.schema.json",
+  "title": "Slovodel EXPERIMENTAL Zhuravlev arithmetic v1",
+  "description": "Arithmetic of a published word-estimate formula on user-supplied scores and frequencies. Not historical program output, not Diaton, not a copy-quality score.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "value",
+    "n_elements",
+    "warnings",
+    "method_id",
+    "tool_version",
+    "schema_version"
+  ],
+  "properties": {
+    "status": {
+      "const": "experimental"
+    },
+    "value": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "n_elements": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "method_id": {
+      "enum": [
+        "zhuravlev.weighted_mean",
+        "zhuravlev.simple_mean",
+        "zhuravlev.distribution_mean"
+      ]
+    },
+    "weighted_sum": {
+      "type": "number",
+      "minimum": 0
+    },
+    "weight_total": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "weights": {
+      "type": "array",
+      "items": {
+        "type": "number",
+        "exclusiveMinimum": 0
+      },
+      "minItems": 1,
+      "maxItems": 64
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "contains": {
+        "const": "NOT_DIATON_NOT_HISTORICAL_PROGRAM_OUTPUT"
+      }
+    },
+    "tool_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schema_version": {
+      "const": "1.0.0"
+    }
+  }
+}

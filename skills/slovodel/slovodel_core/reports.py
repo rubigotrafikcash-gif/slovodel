@@ -31,6 +31,13 @@ def audit(raw: bytes, decoded: str,
           reference: tuple[dict, str] | None = None,
           morphology: tuple[object, str] | None = None,
           morphology_reason: str = "MORPHOLOGY_OPT_IN_REQUIRED") -> dict:
+    measurements = calculate(decoded, reference=reference, morphology=morphology,
+                             morphology_reason=morphology_reason)
+    values = {item["id"]: item["value"] for item in measurements}
+    hygiene = (["MIXED_SCRIPT_TOKENS_PRESENT"]
+               if values.get("mixed_script_token_count") else []) + (
+               ["INVISIBLE_FORMAT_CHARACTERS_PRESENT"]
+               if values.get("invisible_format_char_count") else [])
     return {
         "schema_version": SCHEMA_VERSION,
         "tool_version": __version__,
@@ -40,15 +47,13 @@ def audit(raw: bytes, decoded: str,
         "source_sha256": hashlib.sha256(raw).hexdigest(),
         "source": source_info(raw, decoded),
         "source_policy": source_policy(),
-        "measurements": calculate(decoded, reference=reference,
-                                  morphology=morphology,
-                                  morphology_reason=morphology_reason),
+        "measurements": measurements,
         "historical_compatibility": "not_verified",
         "warnings": (["EMPTY_INPUT"] if not decoded else []) +
             ["ORTHOGRAPHIC_NOT_PHONETIC",
              "URL_EMAIL_EXCLUSION_HEURISTIC",
              "NO_NORMATIVE_CORPUS"] +
-            (["LOCAL_REFERENCE_NOT_NORMATIVE"] if reference else []),
+            (["LOCAL_REFERENCE_NOT_NORMATIVE"] if reference else []) + hygiene,
         "errors": [],
     }
 
@@ -106,8 +111,6 @@ def compare(
                 + (["DIFFERENT_SAMPLE_SIZES"] if first["n"] != second["n"] else [])
             )),
         })
-    if before_raw == after_raw:
-        assert all(item["delta"] == 0 for item in pairs)
     return {
         "schema_version": SCHEMA_VERSION,
         "tool_version": __version__,

@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/rubigotrafikcash-gif/slovodel/blob/main/schemas/fact-guard.schema.json",
-  "title": "Slovodel protected facts A8 report v1",
-  "description": "Independent structural risk screen, never a semantic guarantee. Values are redacted.",
+  "title": "Slovodel protected facts A8 report v2",
+  "description": "Independent structural risk screen, never a semantic guarantee. Values are redacted. Rules 2.0: blocker findings block; review findings require a human check without blocking.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -20,7 +20,7 @@
   ],
   "properties": {
     "guard_version": {
-      "const": "a8-rules-1.0"
+      "const": "a8-rules-2.0"
     },
     "tool_version": {
       "type": "string",
@@ -82,17 +82,29 @@
               "money",
               "date",
               "deadline",
+              "calendar",
               "range",
               "quantity",
+              "code",
               "number",
+              "number_word",
+              "binding",
               "organization",
               "person",
+              "proper_name",
+              "polarity",
+              "modality",
+              "guarantee",
+              "protected_term",
               "condition",
-              "protected_term"
+              "quantifier"
             ]
           },
           "severity": {
-            "const": "blocker"
+            "enum": [
+              "blocker",
+              "review"
+            ]
           },
           "before_count": {
             "type": "integer",
@@ -129,48 +141,17 @@
       "then": {
         "properties": {
           "findings": {
-            "minItems": 1
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "decision": {
-            "enum": [
-              "unchanged",
-              "review_required"
-            ]
-          }
-        },
-        "required": [
-          "decision"
-        ]
-      },
-      "then": {
-        "properties": {
-          "findings": {
-            "maxItems": 0
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "decision": {
-            "const": "unchanged"
-          }
-        },
-        "required": [
-          "decision"
-        ]
-      },
-      "then": {
-        "properties": {
-          "changed": {
-            "const": false
+            "contains": {
+              "type": "object",
+              "properties": {
+                "severity": {
+                  "const": "blocker"
+                }
+              },
+              "required": [
+                "severity"
+              ]
+            }
           }
         }
       }
@@ -190,6 +171,43 @@
         "properties": {
           "changed": {
             "const": true
+          },
+          "findings": {
+            "not": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "severity": {
+                    "const": "blocker"
+                  }
+                },
+                "required": [
+                  "severity"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "const": "unchanged"
+          }
+        },
+        "required": [
+          "decision"
+        ]
+      },
+      "then": {
+        "properties": {
+          "changed": {
+            "const": false
+          },
+          "findings": {
+            "maxItems": 0
           }
         }
       }

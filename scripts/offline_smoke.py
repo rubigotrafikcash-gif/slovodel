@@ -6,17 +6,16 @@ Not an OS network sandbox: CI also statically scans application imports.
 from __future__ import annotations
 
 import contextlib
-from pathlib import Path
 import json
 import socket
 import sys
-import tempfile
 import urllib.request
+from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "skills/slovodel"))
-from slovodel_core.workflow import build
 from slovodel_core.fact_guard import check
+from slovodel_core.workflow import build
 
 
 def document(text: str) -> tuple[bytes, str]:

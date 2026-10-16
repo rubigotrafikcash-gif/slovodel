@@ -9,9 +9,8 @@ from __future__ import annotations
 import argparse
 import json
 import platform
-from pathlib import Path
-import sys
 import unittest
+from pathlib import Path
 
 
 class LoggedResult(unittest.TestResult):

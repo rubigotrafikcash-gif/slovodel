@@ -18,7 +18,13 @@ def m(text, key):
 
 class CopywriterV07(unittest.TestCase):
     def test_version(self):
-        self.assertEqual(__version__,"0.7.0")
+        # v0.7 features remain; the package version is kept in sync across files.
+        import re
+        pyproject=(ROOT/"pyproject.toml").read_text(encoding="utf-8")
+        skill=(ROOT/"skills"/"slovodel"/"SKILL.md").read_text(encoding="utf-8")
+        self.assertIn(f'version = "{__version__}"', pyproject)
+        self.assertRegex(skill, r'version: "' + re.escape(__version__) + '"')
+        self.assertGreaterEqual(tuple(map(int,__version__.split("."))),(0,7,0))
 
     def test_a4_alternative_denominator(self):
         self.assertEqual(m("В доме","russian_syllables_per_token_mean")["value"],1.0)

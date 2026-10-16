@@ -8,25 +8,35 @@ it does not transcribe sound or resolve pronunciation exceptions.
 from __future__ import annotations
 
 import re
-from .metrics import (ABBREV, PHI, VOWELS, cleaned, measurement,
-                      russian_token, unavailable, words)
+
+from .metrics import (
+    PHI,
+    VOWELS,
+    cleaned,
+    measurement,
+    russian_token,
+    sentence_segments,
+    unavailable,
+    words,
+)
 
 FINAL_VOICED = re.compile(r"[бвгджз]ь?$")
+# Prepositions/proclitics: their final consonant is voiced or devoiced by the
+# NEXT word, so a word-final rule would flag them wrongly (в доме, из бумаги).
+PROCLITICS = frozenset((
+    "в", "из", "без", "под", "над", "перед", "об", "через", "из-за", "из-под",
+    "изо", "подо", "надо", "передо", "обо", "безо",
+))
 
 
 def _sentence_lengths(text: str) -> list[int]:
-    """Follow existing A1 sentence heuristic; return nonempty token lengths."""
-    text = ABBREV.sub(lambda m: m.group().replace(".", " "), text)
-    chars = list(text)
-    for index in range(1, len(chars) - 1):
-        if chars[index] == "." and chars[index - 1].isdigit() and chars[index + 1].isdigit():
-            chars[index] = " "
-    return [len(part_tokens) for segment in re.split(r"[.!?\u2026]+", "".join(chars))
+    """Follow the shared A1 segmentation; return nonempty token lengths."""
+    return [len(part_tokens) for segment in sentence_segments(text)
             if (part_tokens := words(segment))]
 
 
 def extra_metrics(decoded: str) -> list[dict]:
-    """Compute editor-friendly, source-free aggregates without touching v0.6 metrics."""
+    """Compute editor-friendly, source-free aggregates (method version 0.8.0)."""
     safe = cleaned(decoded)
     tokens = words(safe)
     ru = [token for token in tokens if russian_token(token)]
@@ -38,11 +48,12 @@ def extra_metrics(decoded: str) -> list[dict]:
             sample: int, section: str, warnings: list[str] | None = None) -> None:
         result.append(measurement(identifier, value, unit, sample, section, warnings))
 
-    pronounced_candidates = sum(bool(FINAL_VOICED.search(token)) for token in ru)
+    pronounced_candidates = sum(bool(FINAL_VOICED.search(token)) for token in ru
+                                if token not in PROCLITICS)
     add("a9_final_voiced_letter_review_candidates", pronounced_candidates, "tokens",
         n, "a9.spelling_final_voiced", [
             "SPELLING_HEURISTIC_NOT_IPA", "NOT_A_PHONETIC_TRANSCRIPTION",
-            "EXCEPTIONS_AND_CONTEXT_NOT_RESOLVED",
+            "EXCEPTIONS_AND_CONTEXT_NOT_RESOLVED", "PROCLITICS_EXCLUDED",
         ])
     multisyllabic = sum(sum(ch in VOWELS for ch in token) >= 3 for token in ru)
     add("a4_words_3plus_vowels_count", multisyllabic, "tokens", n,

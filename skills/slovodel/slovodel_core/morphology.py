@@ -6,12 +6,12 @@ disambiguation or conflate dictionary candidate scores with probabilities.
 """
 from __future__ import annotations
 
+import unicodedata
 from collections import Counter
 from importlib import import_module
 from importlib.metadata import PackageNotFoundError, version
-import unicodedata
+from typing import Any
 
-from . import METHOD_VERSION
 from .metrics import cleaned, measurement, russian_token, unavailable, words
 
 ANALYZER_VERSION = "2.0.6"
@@ -51,7 +51,7 @@ def load_backend() -> tuple[tuple[object, str] | None, str | None]:
     return (morph, dataset_id), None
 
 
-def token_pos(word: str, analyzer: object) -> str:
+def token_pos(word: str, analyzer: Any) -> str:
     """One of POS, AMBIGUOUS, OOV, UNCLASSIFIED.
 
     Only known dictionary parses with a *unique* POS contribute to POS totals.
@@ -69,7 +69,7 @@ def token_pos(word: str, analyzer: object) -> str:
     tags = {getattr(getattr(p, "tag", None), "POS", None) for p in known}
     if None in tags or not tags or any(tag not in TAGS_SET for tag in tags):
         return "UNCLASSIFIED"
-    return next(iter(tags)) if len(tags) == 1 else "AMBIGUOUS"
+    return str(next(iter(tags))) if len(tags) == 1 else "AMBIGUOUS"
 
 
 def pos_measure(

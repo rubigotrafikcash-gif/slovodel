@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+from typing import Any
 
 from . import __version__
 from .fact_guard import check as check_facts
@@ -51,9 +52,23 @@ def build(
     else:
         if input_doc is not None or before_doc is None or after_doc is None:
             raise ValueError("WORKFLOW_MISSING_OR_EXTRA_INPUT")
-    kw = {"reference": reference, "morphology": morphology,
-          "morphology_reason": morphology_reason}
-    report = {
+    empty: tuple[bytes, str] = (b"", "")
+    single = input_doc or empty
+    first = before_doc or empty
+    second = after_doc or empty
+
+    def run_audit(doc: tuple[bytes, str]) -> dict:
+        return audit(doc[0], doc[1], reference=reference, morphology=morphology,
+                     morphology_reason=morphology_reason)
+
+    def run_compare(first: tuple[bytes, str], second: tuple[bytes, str]) -> dict:
+        return compare(first[0], first[1], second[0], second[1],
+                       reference=reference, morphology=morphology,
+                       morphology_reason=morphology_reason)
+
+    warnings: list[str] = ["NO_AUTO_PUBLICATION", "NO_SEMANTIC_EQUIVALENCE_PROVEN"]
+    steps: list[str] = []
+    report: dict[str, Any] = {
         "workflow_schema_version": SCHEMA,
         "tool_version": __version__,
         "mode": mode,
@@ -61,53 +76,57 @@ def build(
         "ai_text_generation": "external_to_this_workflow",
         "publication_ready": False,
         "decision": "",
-        "steps_executed": [],
+        "steps_executed": steps,
         "pre_analysis": None,
         "post_analysis": None,
         "comparison": None,
         "fact_guard": None,
-        "warnings": ["NO_AUTO_PUBLICATION", "NO_SEMANTIC_EQUIVALENCE_PROVEN"],
+        "warnings": warnings,
     }
     if mode == "audit":
-        report["pre_analysis"] = audit(*input_doc, **kw)
-        report["steps_executed"] = ["analyze_input"]
+        report["pre_analysis"] = run_audit(single)
+        steps.append("analyze_input")
         report["decision"] = "audit_only"
     elif mode == "create":
-        report["post_analysis"] = audit(*input_doc, **kw)
-        report["steps_executed"] = ["analyze_agent_draft"]
+        report["post_analysis"] = run_audit(single)
+        steps.append("analyze_agent_draft")
         report["decision"] = "draft_requires_review"
-        if PLACEHOLDER.search(input_doc[1]):
-            report["warnings"].append("UNRESOLVED_PLACEHOLDER_DETECTED")
-        report["warnings"].append("BRIEF_FACTS_NOT_AUTOMATICALLY_VERIFIED")
+        if PLACEHOLDER.search(single[1]):
+            warnings.append("UNRESOLVED_PLACEHOLDER_DETECTED")
+        warnings.append("BRIEF_FACTS_NOT_AUTOMATICALLY_VERIFIED")
     elif mode == "rewrite":
-        report["pre_analysis"] = audit(*before_doc, **kw)
-        report["fact_guard"] = guard_report(before_doc, after_doc,
-                                             protected_terms)
-        report["post_analysis"] = audit(*after_doc, **kw)
-        report["comparison"] = compare(
-            *before_doc, *after_doc, **kw
-        )
-        report["steps_executed"] = [
+        report["pre_analysis"] = run_audit(first)
+        guard = guard_report(first, second, protected_terms)
+        report["fact_guard"] = guard
+        report["post_analysis"] = run_audit(second)
+        report["comparison"] = run_compare(first, second)
+        steps.extend([
             "analyze_original", "check_agent_edit_facts",
             "analyze_agent_revision", "compare_reproducible_metrics"
-        ]
+        ])
         report["decision"] = (
-            "blocked" if report["fact_guard"]["decision"] == "blocked"
+            "blocked" if guard["decision"] == "blocked"
             else "draft_requires_review"
         )
         if report["decision"] == "blocked":
-            report["warnings"].append("PUBLICATION_BLOCKED_BY_FACT_GUARD")
+            warnings.append("PUBLICATION_BLOCKED_BY_FACT_GUARD")
+        if any(item["severity"] == "review"
+               for item in guard["findings"]):
+            warnings.append("FACT_GUARD_REVIEW_ITEMS")
     else:
-        report["pre_analysis"] = audit(*before_doc, **kw)
-        report["post_analysis"] = audit(*after_doc, **kw)
-        report["comparison"] = compare(*before_doc, *after_doc, **kw)
-        report["fact_guard"] = guard_report(before_doc, after_doc,
-                                             protected_terms)
-        report["steps_executed"] = [
+        report["pre_analysis"] = run_audit(first)
+        report["post_analysis"] = run_audit(second)
+        report["comparison"] = run_compare(first, second)
+        guard = guard_report(first, second, protected_terms)
+        report["fact_guard"] = guard
+        steps.extend([
             "analyze_first", "analyze_second",
             "compare_reproducible_metrics", "screen_fact_differences"
-        ]
+        ])
         report["decision"] = "comparison_only"
-        if report["fact_guard"]["decision"] == "blocked":
-            report["warnings"].append("PROTECTED_FACTS_DIFFER")
+        if guard["decision"] == "blocked":
+            warnings.append("PROTECTED_FACTS_DIFFER")
+        if any(item["severity"] == "review"
+               for item in guard["findings"]):
+            warnings.append("FACT_GUARD_REVIEW_ITEMS")
     return report
