@@ -1,9 +1,9 @@
 name: "Publish Slovodel v0.8.0 prerelease after verified main merge"
 
 on:
-  # Published 2026-10-16; kept for history. Manual only, so later edits of
-  # docs/releases/v0.8.0.md never re-run publication. Note edits are synced
-  # by sync-release-notes.yml.
+  # Published 2026-10-16. Manual only, so later edits of docs/releases/v0.8.0.md
+  # never re-run publication (note edits are synced by sync-release-notes.yml).
+  # Re-running replaces the release asset and moves the tag to current main.
   workflow_dispatch:
 
 permissions:
@@ -44,28 +44,24 @@ jobs:
           cd dist/bundle
           zip -q -r ../slovodel-v0.8.0.zip slovodel
           test -s ../slovodel-v0.8.0.zip
-      - name: Create exact-commit GitHub prerelease and tag (idempotent)
+      - name: Replace v0.8.0 asset and move tag to current main (owner-approved 2026-10-16)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           tag="v0.8.0"
-          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Release already exists; checking its tag target"
-            actual="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq '.object.sha')"
-            test "$actual" = "$GITHUB_SHA"
-          else
-            if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" >/dev/null 2>&1; then
-              echo "ERROR: Tag exists without approved release; refusing to overwrite"
-              exit 1
-            fi
-            gh release create "$tag" "dist/slovodel-v0.8.0.zip" \
-              --repo "$GITHUB_REPOSITORY" \
-              --target "$GITHUB_SHA" \
-              --title "СловоДел v0.8.0 — Public pre-release" \
-              --notes-file "docs/releases/v0.8.0.md" \
-              --prerelease
-          fi
+          # The release must already exist; it is never deleted, so there is no gap.
+          gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null
+          old="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq '.object.sha')"
+          echo "Previous tag target: $old"
+          gh release upload "$tag" "dist/slovodel-v0.8.0.zip" \
+            --repo "$GITHUB_REPOSITORY" --clobber
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/$tag" \
+            -f sha="$GITHUB_SHA" -F force=true >/dev/null
           actual="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq '.object.sha')"
           test "$actual" = "$GITHUB_SHA"
+          mkdir -p /tmp/verify
+          gh release download "$tag" --repo "$GITHUB_REPOSITORY" \
+            -p 'slovodel-v0.8.0.zip' -D /tmp/verify --clobber
+          cmp /tmp/verify/slovodel-v0.8.0.zip dist/slovodel-v0.8.0.zip
           gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json tagName,isPrerelease,url
