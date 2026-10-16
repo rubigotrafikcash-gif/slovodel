@@ -27,6 +27,12 @@
 - `release_smoke.py` — PASS; `offline_smoke.py` — PASS; `benchmark_v07.py` — PASS; `benchmark_v08.py` — PASS (5 векторов: 4 совпадают при округлении, «лик» взвешенный — только при отсечении).
 - JSON Schema Draft 2020-12 для всех выходов, включая новую `zhuravlev-experimental.schema.json`, — PASS.
 
+## CI
+
+[Run 38837144142](https://github.com/rubigotrafikcash-gif/slovodel/actions/runs/38837144142), commit `e419df8`: **6/6 PASS** — ubuntu, windows, macos × Python 3.10 и 3.12, включая JSON Schema, морфологию, покрытие ≥90%, оба бенчмарка, смоук установки, офлайн-смоук и шаг с консолью cp1252.
+
+Первый прогон ([38836815915](https://github.com/rubigotrafikcash-gif/slovodel/actions/runs/38836815915)) упал только на Windows: старые тесты читали файлы и вывод подпроцессов в кодировке системы (cp1252). Исправлено явным `encoding="utf-8"` в тестах; код навыка не менялся. Windows раньше в CI не было, поэтому проблема не была видна.
+
 ## Журавлёв: какие числа проверяются
 
 | Пример | Данные из книги | Напечатано | Считает ядро |
