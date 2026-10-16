@@ -1,10 +1,10 @@
 name: "Publish Slovodel v0.8.0 prerelease after verified main merge"
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "docs/releases/v0.8.0.md"
+  # Published 2026-10-16; kept for history. Manual only, so later edits of
+  # docs/releases/v0.8.0.md never re-run publication. Note edits are synced
+  # by sync-release-notes.yml.
+  workflow_dispatch:
 
 permissions:
   contents: write

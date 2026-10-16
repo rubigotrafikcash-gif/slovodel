@@ -1,0 +1,47 @@
+name: "Sync published release notes from docs/releases"
+
+# Edits ONLY the notes (body) of releases that already exist, from
+# docs/releases/<tag>.md. Never creates, deletes or re-tags a release.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/releases/**"
+      - ".github/workflows/sync-release-notes.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: slovodel-release-notes-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'rubigotrafikcash-gif/slovodel'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Update notes of existing releases when they differ
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for file in docs/releases/v*.md; do
+            tag="$(basename "$file" .md)"
+            if ! gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              echo "$tag: no published release, skipped"
+              continue
+            fi
+            current="$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json body --jq .body)"
+            if [ "$current" = "$(cat "$file")" ]; then
+              echo "$tag: notes already match"
+              continue
+            fi
+            gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --notes-file "$file"
+            test "$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json body --jq .body)" = "$(cat "$file")"
+            echo "$tag: notes updated from $file"
+          done
