@@ -157,6 +157,36 @@ class FactGuardRules2(unittest.TestCase):
         # Old quadratic rules took 29–152 s here; generous bound for slow CI.
         self.assertLess(time.perf_counter() - started, 60)
 
+    def test_number_dense_mebibyte_meets_five_second_target(self):
+        # Worst input found in v0.8 verification: almost every token is a
+        # number. Measured 6.3 s before the number-word lookup, ~3 s after.
+        # CI bound is 2x the 5 s target so slow shared runners do not flake;
+        # the local measurement is recorded in docs/ISSUE_24_VERIFICATION.md.
+        unit = "".join(f"{n} {w} " for n, w in zip(
+            range(1000, 1008), ("дней", "₽", "%", "часов") * 2)) + "три. "
+        text = (unit * (1_048_000 // len(unit.encode("utf-8"))))[:1_000_000]
+        started = time.perf_counter()
+        result = check(text, text + " Гарантия.")
+        self.assertLess(time.perf_counter() - started, 10)
+        self.assertEqual(result["decision"], "blocked")
+
+    def test_number_word_lookup_matches_regex(self):
+        from slovodel_core import fact_guard as fg
+        forms = list(fg.NUMBER_WORDS)
+        extra = ["три3", "3три", "три_", "_три", "три-пять", "ТРИ", "Три", "ТРЁХ",
+                 "стоп", "сороко", "пол", "(три)", "«пять»", "три\u00ad"]
+        for word in forms + extra:
+            for variant in (word, word.upper(), word.capitalize()):
+                text = f"цена {variant}, всего {variant}."
+                pieces, found, last = [], [], 0
+                for m in fg.NUMBER_WORD.finditer(text):
+                    found.append((m.start(), fg.NUMBER_WORDS[m.group().casefold()]))
+                    pieces += [text[last:m.start()], " " * (m.end() - m.start())]
+                    last = m.end()
+                pieces.append(text[last:])
+                self.assertEqual(fg._extract_number_words(text),
+                                 ("".join(pieces), found), variant)
+
 
 class Metrics080(unittest.TestCase):
     def test_line_breaks_split_list_posts(self):

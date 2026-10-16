@@ -311,6 +311,33 @@ def _extract_spans(text: str, pattern: re.Pattern, formatter=None,
     return "".join(pieces), found
 
 
+_WORD_RUN = re.compile(r"\w+")
+
+
+def _extract_number_words(text: str) -> tuple[str, list[tuple[int, str]]]:
+    """Same result as the NUMBER_WORD regex, found by dictionary lookup.
+
+    A hundred-way alternation tried at every position cost over a second per
+    MiB; matching whole words against NUMBER_WORDS is equivalent and fast.
+    """
+    pieces: list[str] = []
+    found: list[tuple[int, str]] = []
+    last = 0
+    for m in _WORD_RUN.finditer(text):
+        key = NUMBER_WORDS.get(m.group().casefold())
+        if key is None:
+            continue
+        start, end = m.span()
+        found.append((start, key))
+        pieces.append(text[last:start])
+        pieces.append(" " * (end - start))
+        last = end
+    if not found:
+        return text, found
+    pieces.append(text[last:])
+    return "".join(pieces), found
+
+
 def validate_terms(lines: list[str] | None) -> tuple[str, ...]:
     if lines is None:
         return ()
@@ -439,7 +466,10 @@ def inventory(text: str, terms: tuple[str, ...] = (),
         ("organization", ORG, None, False),
         ("person", PERSON, None, False),
     ):
-        masked, found = _extract_spans(masked, regex, formatter, trim)
+        if regex is NUMBER_WORD:
+            masked, found = _extract_number_words(masked)
+        else:
+            masked, found = _extract_spans(masked, regex, formatter, trim)
         counts[name].update(key for _, key in found)
         positions.extend((start, name, key) for start, key in found)
     anchors = _AnchorIndex(text)
