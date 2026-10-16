@@ -168,7 +168,7 @@ class WorkflowsE2ETests(unittest.TestCase):
         out = self.file("output.json", "KEEP")
         p = self.run_mode("audit", "--input", a, "--output", out)
         self.assertEqual(p.returncode, 4)
-        self.assertEqual(out.read_text(), "KEEP")
+        self.assertEqual(out.read_text(encoding="utf-8"), "KEEP")
 
     def test_private_values_not_in_stdout(self):
         secret = "https://example.org/?private=9711137"

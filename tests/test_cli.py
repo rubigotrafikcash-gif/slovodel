@@ -141,7 +141,7 @@ class OfflineCliTests(unittest.TestCase):
         first = self.call(ANALYZE, "--input", path, "--output", output)
         self.assertEqual(first.returncode, 0, first.stderr)
         self.assertEqual(first.stdout, "")
-        self.assertEqual(json.loads(output.read_text())["mode"], "audit")
+        self.assertEqual(json.loads(output.read_text(encoding="utf-8"))["mode"], "audit")
         before = output.read_bytes()
         second = self.call(ANALYZE, "--input", path, "--output", output)
         self.assertEqual(second.returncode, 4)
@@ -189,7 +189,7 @@ class OfflineCliTests(unittest.TestCase):
         ]
         for schema_name, document in outputs:
             with self.subTest(schema=schema_name):
-                schema = json.loads((SCHEMAS / schema_name).read_text())
+                schema = json.loads((SCHEMAS / schema_name).read_text(encoding="utf-8"))
                 self.assertTrue(set(schema["required"]) <= set(document))
                 self.assertEqual(set(document), set(schema["properties"]))
                 try:

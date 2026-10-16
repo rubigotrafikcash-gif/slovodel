@@ -69,7 +69,7 @@ class CopywriterV07(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             destination=Path(td)/"result.json"
             run=subprocess.run([sys.executable,str(ROOT/"scripts/benchmark_v07.py"),"--output",str(destination)],
-                               capture_output=True,text=True,timeout=30,cwd=td)
+                               capture_output=True,text=True,encoding="utf-8",timeout=30,cwd=td)
             self.assertEqual(run.returncode,0,run.stderr[:250])
             data=json.loads(destination.read_text(encoding="utf-8"))
             self.assertEqual(data["z_word_scale_cases_executed"],10)
