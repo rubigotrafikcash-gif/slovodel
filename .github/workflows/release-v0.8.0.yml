@@ -1,0 +1,71 @@
+name: "Publish Slovodel v0.8.0 prerelease after verified main merge"
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/releases/v0.8.0.md"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: slovodel-v0.8.0-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'rubigotrafikcash-gif/slovodel'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify v0.7 release commit and package independently
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = "refs/heads/main"
+          grep -q 'PRE-RELEASE' docs/releases/v0.8.0.md
+          python scripts/release_smoke.py --output /tmp/slovodel-portable-release-check.json
+          python scripts/benchmark_v08.py --output /tmp/slovodel-v08-benchmark.json
+          python scripts/benchmark_v07.py --output /tmp/slovodel-v07-benchmark.json
+          python scripts/offline_smoke.py
+          python -m unittest discover -s tests -q
+      - name: Prepare zip with only the single portable skill directory
+        run: |
+          set -euo pipefail
+          mkdir -p dist/bundle
+          cp -R skills/slovodel dist/bundle/slovodel
+          find dist/bundle -type d -name __pycache__ -prune -exec rm -rf {} +
+          find dist/bundle -type f -name '*.pyc' -delete
+          cd dist/bundle
+          zip -q -r ../slovodel-v0.8.0.zip slovodel
+          test -s ../slovodel-v0.8.0.zip
+      - name: Create exact-commit GitHub prerelease and tag (idempotent)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="v0.8.0"
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release already exists; checking its tag target"
+            actual="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq '.object.sha')"
+            test "$actual" = "$GITHUB_SHA"
+          else
+            if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" >/dev/null 2>&1; then
+              echo "ERROR: Tag exists without approved release; refusing to overwrite"
+              exit 1
+            fi
+            gh release create "$tag" "dist/slovodel-v0.8.0.zip" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "СловоДел v0.8.0 — Public pre-release" \
+              --notes-file "docs/releases/v0.8.0.md" \
+              --prerelease
+          fi
+          actual="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq '.object.sha')"
+          test "$actual" = "$GITHUB_SHA"
+          gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json tagName,isPrerelease,url

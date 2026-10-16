@@ -27,7 +27,10 @@ on:
       - "skills/slovodel/schemas/**"
       - "skills/slovodel/LICENSE"
       - "skills/slovodel/references/install.md"
-      - ".coveragerc"
+      - "skills/**"
+      - "tests/**"
+      - "docs/ISSUE_24_VERIFICATION.md"
+      - ".github/workflows/release-v0.8.0.yml"
       - "skills/slovodel/SKILL.md"
       - "skills/slovodel/references/cli-contract.md"
       - "skills/slovodel/references/metrics-contract.md"
@@ -64,11 +67,17 @@ permissions:
 
 jobs:
   cli-smoke:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.10", "3.12"]
+    env:
+      PYTHONUTF8: "0"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -88,17 +97,26 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check pymorphy3==2.0.6 pymorphy3-dicts-ru==2.4.417150.4580142
           python -m unittest discover -s tests -v
-      - name: Coverage of six deterministic editorial/kernel modules (minimum 90 percent)
+      - name: Coverage of seven deterministic editorial/kernel modules (minimum 90 percent)
         run: |
           python -m pip install --disable-pip-version-check coverage==7.10.7
           mkdir -p test-results
           python -m coverage run --source=skills/slovodel/slovodel_core -m unittest discover -s tests -q
-          python -m coverage report --include="*/slovodel_core/metrics.py,*/slovodel_core/a2.py,*/slovodel_core/fact_guard.py,*/slovodel_core/reports.py,*/slovodel_core/workflow.py,*/slovodel_core/editorial_metrics.py" --show-missing --fail-under=90
-          python -m coverage json --include="*/slovodel_core/metrics.py,*/slovodel_core/a2.py,*/slovodel_core/fact_guard.py,*/slovodel_core/reports.py,*/slovodel_core/workflow.py,*/slovodel_core/editorial_metrics.py" -o test-results/coverage.json
+          python -m coverage report --include="*/slovodel_core/metrics.py,*/slovodel_core/a2.py,*/slovodel_core/fact_guard.py,*/slovodel_core/reports.py,*/slovodel_core/workflow.py,*/slovodel_core/editorial_metrics.py,*/slovodel_core/zhuravlev.py" --show-missing --fail-under=90
+          python -m coverage json --include="*/slovodel_core/metrics.py,*/slovodel_core/a2.py,*/slovodel_core/fact_guard.py,*/slovodel_core/reports.py,*/slovodel_core/workflow.py,*/slovodel_core/editorial_metrics.py,*/slovodel_core/zhuravlev.py" -o test-results/coverage.json
       - name: Save machine-readable unit/regression results
         run: python scripts/quality_report.py --output test-results/unittest-results.json
       - name: Re-run sourced Zhuravlev word benchmark without pretending Diaton equivalence
         run: python scripts/benchmark_v07.py --output test-results/v07-primary-benchmark.json
+      - name: Compare published Zhuravlev arithmetic with the experimental kernel
+        run: python scripts/benchmark_v08.py --output test-results/v08-primary-benchmark.json
+      - name: CLI stdout works on a Latin console code page (Windows regression)
+        env:
+          PYTHONIOENCODING: cp1252
+        run: |
+          printf 'Привет, мир.' > test-results/cp.txt
+          python skills/slovodel/scripts/analyze.py --input test-results/cp.txt > test-results/cp.json
+          python -c "import json; json.load(open('test-results/cp.json', encoding='utf-8'))"
       - name: Isolated installed skill smoke (Codex/Claude folder layouts, no agent auth)
         run: python scripts/release_smoke.py --output test-results/portable-install.json
       - name: No-network smoke (socket functions disabled, synthetic texts)
@@ -127,11 +145,12 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: quality-python-${{ matrix.python-version }}
+          name: quality-${{ matrix.os }}-python-${{ matrix.python-version }}
           path: |
             test-results/coverage.json
             test-results/unittest-results.json
             test-results/portable-install.json
             test-results/v07-primary-benchmark.json
+            test-results/v08-primary-benchmark.json
           if-no-files-found: warn
           retention-days: 30
