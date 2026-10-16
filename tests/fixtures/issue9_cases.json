@@ -1,5 +1,5 @@
 {
-  "fixture_version": "1.0",
+  "fixture_version": "1.0+a8-2.0",
   "description": "Synthetic synthetic-only A8 negative and neutral regression inputs. All names and amounts fictitious; not agent responses.",
   "cases": [
     {
@@ -118,9 +118,10 @@
       "id": "added-constraint",
       "before": "Принимаются заявки.",
       "after": "Принимаются заявки только после проверки.",
-      "decision": "blocked",
+      "decision": "review_required",
       "expected_kind": "condition",
-      "terms": []
+      "terms": [],
+      "note": "A8 rules 2.0: an added restriction word is a REVIEW finding, not a blocker; paraphrases of conditions must not block (Issue #24)."
     },
     {
       "id": "organisation",
@@ -176,9 +177,10 @@
       "id": "unknown-prose-claim",
       "before": "Сервис помогает экономить время.",
       "after": "Сервис гарантирует результат.",
-      "decision": "review_required",
-      "expected_kind": null,
-      "terms": []
+      "decision": "blocked",
+      "expected_kind": "guarantee",
+      "terms": [],
+      "note": "A8 rules 2.0: an added guarantee is a blocker (compliance.md), Issue #24."
     }
   ]
 }

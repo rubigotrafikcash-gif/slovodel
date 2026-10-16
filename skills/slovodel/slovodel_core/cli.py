@@ -47,10 +47,11 @@ def execute(command: str, args: list[str] | None = None) -> int:
     try:
         if command == "validate":
             import hashlib
+
             from .fact_guard import check, validate_terms
             before_raw, before = read_text(namespace.before)
             after_raw, after = read_text(namespace.after)
-            terms = ()
+            terms: tuple[str, ...] = ()
             if namespace.protected_file is not None:
                 _, term_text = read_text(namespace.protected_file)
                 terms = validate_terms(term_text.splitlines())
@@ -70,10 +71,12 @@ def execute(command: str, args: list[str] | None = None) -> int:
                 rights_basis=namespace.rights_basis,
             )
         else:
-            morphology, morphology_reason = None, "MORPHOLOGY_OPT_IN_REQUIRED"
+            morphology: tuple[object, str] | None = None
+            morphology_reason = "MORPHOLOGY_OPT_IN_REQUIRED"
             if namespace.morphology:
                 from .morphology import load_backend
-                morphology, morphology_reason = load_backend()
+                morphology, backend_reason = load_backend()
+                morphology_reason = backend_reason or morphology_reason
             reference = None
             if namespace.reference is not None:
                 _, local_json = read_text(namespace.reference)

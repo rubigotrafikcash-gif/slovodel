@@ -6,10 +6,10 @@ returned; only aggregate measurements are exposed in the public JSON report.
 """
 from __future__ import annotations
 
-from collections import Counter
 import re
 import statistics
 import unicodedata
+from collections import Counter
 
 from . import METHOD_VERSION
 
@@ -29,10 +29,49 @@ ABBREV = re.compile(
 )
 
 
+# Final-capable abbreviations end a sentence when a capital letter follows.
+FINAL_ABBREV = frozenset(("т.д.", "т. д.", "т.п.", "т. п.", "др."))
+# Invisible format characters joined *inside* a word (soft hyphen, zero-width).
+IGNORABLE = re.compile(r"(?<=\w)[\u00ad\u200b\u200c\u200d\u2060\ufeff]+(?=\w)")
+APOSTROPHES = "'\u2019\u02bc"
+# Latin letters that look identical to Russian ones (case-sensitive map).
+HOMOGLYPHS = str.maketrans("aceopxyABCEHKMOPTX", "асеорхуАВСЕНКМОРТХ")
+LETTER_RUN = re.compile(r"[^\W\d_]+")
+CYRILLIC = re.compile(r"[\u0400-\u04ff]")
+LATIN = re.compile(r"[A-Za-z]")
+HOMOGLYPH_LATIN = frozenset("aceopxyABCEHKMOPTX")
+
+
 def cleaned(text: str) -> str:
     """Mask excluded spans with spaces, preserving source-length positions."""
     text = URL.sub(lambda m: " " * len(m.group()), text)
     return EMAIL.sub(lambda m: " " * len(m.group()), text)
+
+
+def script_hygiene(text: str) -> tuple[str, int, int, int]:
+    """Prepare text: join invisible in-word characters, fold Latin look-alikes.
+
+    Returns (prepared_text, invisible_format_chars, mixed_script_tokens,
+    homoglyph_folded_tokens). A token is folded only when it contains Russian
+    letters and every Latin letter in it has an identical-looking Russian twin.
+    """
+    invisible = sum(unicodedata.category(ch) == "Cf" for ch in text)
+    joined = IGNORABLE.sub("", text)
+    mixed = folded = 0
+
+    def fold(match: re.Match) -> str:
+        nonlocal mixed, folded
+        token = match.group()
+        if not (CYRILLIC.search(token) and LATIN.search(token)):
+            return token
+        mixed += 1
+        if all(ch in HOMOGLYPH_LATIN for ch in token
+               if ch.isascii() and ch.isalpha()):
+            folded += 1
+            return token.translate(HOMOGLYPHS)
+        return token
+
+    return LETTER_RUN.sub(fold, joined), invisible, mixed, folded
 
 
 def is_mark(char: str) -> bool:
@@ -42,8 +81,8 @@ def is_mark(char: str) -> bool:
 def words(text: str) -> list[str]:
     """Letter tokens, marks attach to the preceding letter, hyphen joins words.
 
-    ASCII hyphen connects two letter runs; U+2010/U+2011 also join. Em dash
-    splits. Numbers, links/emails, emoji and underscore never become tokens.
+    ASCII hyphen connects two letter runs; U+2010/U+2011 also join, and an
+    apostrophe between letters joins (д'Артаньян). Em dash splits. Numbers, links/emails, emoji and underscore never become tokens.
     """
     result = []
     buf = []
@@ -57,6 +96,9 @@ def words(text: str) -> list[str]:
         elif (ch in "-\u2010\u2011" and buf and
               index + 1 < len(text) and text[index + 1].isalpha()):
             buf.append("-")
+        elif (ch in APOSTROPHES and buf and
+              index + 1 < len(text) and text[index + 1].isalpha()):
+            buf.append("'")
         else:
             if buf:
                 result.append("".join(buf).casefold())
@@ -69,21 +111,42 @@ def words(text: str) -> list[str]:
 
 def russian_token(word: str) -> bool:
     """Russian alphabet only, with marks attached and optional hyphens."""
-    base = [ch for ch in word if not is_mark(ch) and ch != "-"]
+    base = [ch for ch in word if not is_mark(ch) and ch not in "-'"]
     return bool(base) and all(ch in RU_LETTERS for ch in base)
 
 
-def sentence_count(text: str) -> int:
-    """Conservative punctuation heuristic, NOT syntactic parsing."""
-    masked = ABBREV.sub(lambda m: m.group().replace(".", " "), text)
-    # Decimal punctuation does not delimit a sentence.
+def _mask_abbreviation(match: re.Match) -> str:
+    span = match.group()
+    rest = match.string[match.end():]
+    key = " ".join(span.casefold().split()).replace(". ", ".")
+    final = key in {k.replace(". ", ".") for k in FINAL_ABBREV}
+    if final and (not rest.strip() or re.match(r"\s+[A-ZА-ЯЁ]", rest)):
+        return span[:-1].replace(".", " ") + "."
+    return span.replace(".", " ")
+
+
+LINE_BREAK = re.compile(r"\n(?=[ \t\r]*(?:[^a-zа-яё \t\r]|$))")
+
+
+def sentence_segments(text: str) -> list[str]:
+    """Conservative punctuation + line heuristic, NOT syntactic parsing.
+
+    Boundaries: . ! ? … ; a line break unless the next line starts with a
+    lowercase letter (wrapped prose); abbreviations т. д./т. п./др. end a
+    sentence only before a capital letter or the end of text.
+    """
+    masked = ABBREV.sub(_mask_abbreviation, text)
     chars = list(masked)
     for i in range(1, len(chars) - 1):
         if (chars[i] == "." and chars[i - 1].isdigit()
                 and chars[i + 1].isdigit()):
             chars[i] = " "
-    parts = re.split(r"[.!?\u2026]+", "".join(chars))
-    return sum(bool(words(part)) for part in parts)
+    masked = LINE_BREAK.sub("\n\u2029", "".join(chars))
+    return re.split(r"[.!?\u2026\u2029]+", masked)
+
+
+def sentence_count(text: str) -> int:
+    return sum(bool(words(part)) for part in sentence_segments(text))
 
 
 def base_mark_clusters(text: str) -> int:
@@ -123,7 +186,7 @@ def letter_ngram_stats(ru_words: list[str], size: int) -> tuple[int, int]:
         word[i:i + size]
         for word in ru_words
         for i in range(max(0, len(word) - size + 1))
-        if "-" not in word[i:i + size]
+        if "-" not in word[i:i + size] and "'" not in word[i:i + size]
         and not any(is_mark(ch) for ch in word[i:i + size])
     )
     return (sum(freq > 1 for freq in counts.values()),
@@ -144,7 +207,8 @@ def calculate(decoded: str, reference: tuple[dict, str] | None = None,
               morphology_reason: str = "MORPHOLOGY_OPT_IN_REQUIRED") -> list[dict]:
     """Ordered list of aggregate, provenance-tagged metrics."""
     text = unicodedata.normalize("NFC", decoded)
-    safe = cleaned(text)
+    prepared, invisible, mixed, folded = script_hygiene(text)
+    safe = cleaned(prepared)
     tokens = words(safe)
     ru_words = [token for token in tokens if russian_token(token)]
     ru_letters = [ch for ch in safe.casefold() if ch in RU_LETTERS]
@@ -168,6 +232,12 @@ def calculate(decoded: str, reference: tuple[dict, str] | None = None,
     add("base_mark_cluster_count", base_mark_clusters(text), "clusters",
         len(text), "a1.base_mark_clusters", ["NOT_UAX29_GRAPHEMES"])
     add("russian_letter_count", n_letters, "letters", n_letters, "a1.letters")
+    add("invisible_format_char_count", invisible, "codepoints", len(text),
+        "a1.script_hygiene", ["SOFT_HYPHEN_AND_ZERO_WIDTH_JOINED_INSIDE_WORDS"])
+    add("mixed_script_token_count", mixed, "tokens", len(tokens),
+        "a1.script_hygiene", ["CYRILLIC_LATIN_IN_ONE_TOKEN"])
+    add("homoglyph_folded_token_count", folded, "tokens", len(tokens),
+        "a1.script_hygiene", ["LATIN_LOOKALIKES_READ_AS_RUSSIAN"])
     for ch in RU_ALPHABET:
         add("letter_" + ch + "_count", letter_counts[ch], "letters",
             n_letters, "a1.letters")
@@ -239,7 +309,7 @@ def calculate(decoded: str, reference: tuple[dict, str] | None = None,
     else:
         metrics.append(unavailable("pos_distribution", morphology_reason))
     from .editorial_metrics import extra_metrics
-    metrics.extend(extra_metrics(text))
+    metrics.extend(extra_metrics(prepared))
     metrics.extend([
         unavailable("norm_letter_deviation", "NORMATIVE_CORPUS_NOT_AVAILABLE"),
         unavailable("historical_suggestive_score",

@@ -5,9 +5,9 @@ No network calls. Input text is never logged or included in error messages.
 from __future__ import annotations
 
 import os
-from pathlib import Path
 import stat
 import sys
+from pathlib import Path
 
 MAX_INPUT_BYTES = 1_048_576
 
@@ -50,10 +50,18 @@ def read_text(path: str) -> tuple[bytes, str]:
 
 def emit_json(payload: str, output: str | None) -> None:
     if output is None:
+        # Always UTF-8, independent of the console code page (cp1252/cp437 on
+        # Windows cannot encode Cyrillic metric ids such as letter_а_count).
         try:
-            sys.stdout.write(payload)
-            sys.stdout.write("\n")
-            sys.stdout.flush()
+            buffer = getattr(sys.stdout, "buffer", None)
+            if buffer is not None:
+                sys.stdout.flush()
+                buffer.write((payload + "\n").encode("utf-8"))
+                buffer.flush()
+            else:
+                sys.stdout.write(payload)
+                sys.stdout.write("\n")
+                sys.stdout.flush()
         except (OSError, UnicodeError):
             raise DataError("OUTPUT_WRITE_FAILED") from None
         return

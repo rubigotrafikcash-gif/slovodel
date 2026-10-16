@@ -18,7 +18,13 @@ def m(text, key):
 
 class CopywriterV07(unittest.TestCase):
     def test_version(self):
-        self.assertEqual(__version__,"0.7.0")
+        # v0.7 features remain; the package version is kept in sync across files.
+        import re
+        pyproject=(ROOT/"pyproject.toml").read_text(encoding="utf-8")
+        skill=(ROOT/"skills"/"slovodel"/"SKILL.md").read_text(encoding="utf-8")
+        self.assertIn(f'version = "{__version__}"', pyproject)
+        self.assertRegex(skill, r'version: "' + re.escape(__version__) + '"')
+        self.assertGreaterEqual(tuple(map(int,__version__.split("."))),(0,7,0))
 
     def test_a4_alternative_denominator(self):
         self.assertEqual(m("В доме","russian_syllables_per_token_mean")["value"],1.0)
@@ -63,7 +69,7 @@ class CopywriterV07(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             destination=Path(td)/"result.json"
             run=subprocess.run([sys.executable,str(ROOT/"scripts/benchmark_v07.py"),"--output",str(destination)],
-                               capture_output=True,text=True,timeout=30,cwd=td)
+                               capture_output=True,text=True,encoding="utf-8",timeout=30,cwd=td)
             self.assertEqual(run.returncode,0,run.stderr[:250])
             data=json.loads(destination.read_text(encoding="utf-8"))
             self.assertEqual(data["z_word_scale_cases_executed"],10)

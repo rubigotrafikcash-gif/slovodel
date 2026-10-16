@@ -6,13 +6,14 @@ All rights/provenance assertions are self-declared, not independently verified.
 """
 from __future__ import annotations
 
-from collections import Counter
 import hashlib
 import json
 import unicodedata
+from collections import Counter
+
+from .metrics import RU_ALPHABET, RU_LETTERS, cleaned, measurement, unavailable
 
 PROFILE_METHOD_VERSION = "0.3.0"  # Profile contract unchanged by A5
-from .metrics import RU_ALPHABET, RU_LETTERS, cleaned, measurement, unavailable
 
 PROFILE_FORMAT = "slovodel.local-letter-reference.v1"
 MIN_REFERENCE_LETTERS = 10_000

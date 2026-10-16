@@ -230,10 +230,10 @@ class DeterministicKernelTests(unittest.TestCase):
             path.write_bytes(data)
             self.assertEqual(read_text(str(path)),(data,"ё, е\u0308"))
             emit_json('{"safe":true}',str(out))
-            self.assertEqual(json.loads(out.read_text())["safe"],True)
+            self.assertEqual(json.loads(out.read_text(encoding="utf-8"))["safe"],True)
             with self.assertRaises(DataError):
                 emit_json('{"safe":false}',str(out))
-            self.assertEqual(json.loads(out.read_text())["safe"],True)
+            self.assertEqual(json.loads(out.read_text(encoding="utf-8"))["safe"],True)
             self.assertEqual(path.read_bytes(),data)
 
     def test_emit_to_stdout_is_not_user_text(self):
