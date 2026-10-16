@@ -73,7 +73,8 @@ ORG = re.compile(
     r"(?iu)(?<!\w)(?:ООО|АО|ПАО|НКО)\s*[«\"][^»\"\n]{1,100}[»\"]"
 )
 PERSON = re.compile(
-    r"(?u)(?<!\w)[А-ЯЁ][а-яё]{1,30}\s+[А-ЯЁ][а-яё]{1,30}(?!\w)"
+    # Same line only: a UI label line and a button line are not a full name.
+    r"(?u)(?<!\w)[А-ЯЁ][а-яё]{1,30}[ \t]+[А-ЯЁ][а-яё]{1,30}(?!\w)"
 )
 # Lexical conditions and scope words: a paraphrase is common, so REVIEW only.
 CONDITION = re.compile(
@@ -364,7 +365,8 @@ def _sentence_initial(text: str, start: int) -> bool:
         if text[i] == "\n":
             return True
         i -= 1
-    return i < 0 or text[i] in ".!?…"
+    # A colon starts a value («Кнопка: Войти»): a capital after it is not a name.
+    return i < 0 or text[i] in ".!?…:"
 
 
 def _proper_name_seeds(text: str) -> set[str]:

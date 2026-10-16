@@ -126,6 +126,16 @@ class FactGuardRules2(unittest.TestCase):
             with self.subTest(before=before[:40]):
                 self.assertNotEqual(check(before, after)["decision"], "blocked")
 
+    def test_interface_labels_and_lines_are_not_names(self):
+        # Found by the independent agent run (scenario 8): UI copy was blocked.
+        for before, after in (
+            ("Заголовок\nВойдите в аккаунт", "Войдите в аккаунт\nВойти"),
+            ("Текст: Вы не вошли. Кнопка: Войти",
+             "Текст: Войдите в аккаунт. Кнопка: Продолжить"),
+        ):
+            with self.subTest(after=after):
+                self.assertNotEqual(check(before, after)["decision"], "blocked")
+
     def test_values_and_names_never_leak(self):
         result = check("Сайт 100 000 ₽, ведёт Петрова, код OSEN10.",
                        "Сайт 30 000 ₽, ведёт Иванова, код OSEN20.")

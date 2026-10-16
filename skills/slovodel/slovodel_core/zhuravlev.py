@@ -107,7 +107,7 @@ def weighted_score(elements: list[dict]) -> dict:
         * (STRESS_WEIGHT if stressed else 1.0)
         for _, frequency, first, stressed in parsed
     ]
-    weighted_sum = sum(score * w for (score, _, _, _), w in zip(parsed, weights))
+    weighted_sum = sum(score * w for (score, _, _, _), w in zip(parsed, weights, strict=True))
     total_weight = sum(weights)
     return {
         "status": STATUS,
