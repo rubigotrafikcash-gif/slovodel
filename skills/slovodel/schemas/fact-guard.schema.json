@@ -20,7 +20,7 @@
   ],
   "properties": {
     "guard_version": {
-      "const": "a8-rules-2.0"
+      "const": "a8-rules-2.1"
     },
     "tool_version": {
       "type": "string",
@@ -97,7 +97,10 @@
               "guarantee",
               "protected_term",
               "condition",
-              "quantifier"
+              "quantifier",
+              "commercial_term",
+              "initial_capital",
+              "audience_context"
             ]
           },
           "severity": {

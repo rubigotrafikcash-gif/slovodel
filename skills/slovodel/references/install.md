@@ -1,9 +1,21 @@
-# Установка публичного «СловоДела» — v0.7.0
+# Установка публичного «СловоДела» — v0.8.1
 
 **Одна папка `slovodel/` — полный автономный пакет навыка**: `SKILL.md`, `LICENSE`, `references/`, `assets/`, `scripts/`, `slovodel_core/`, `schemas/`. Python не нужен для качественной редактуры: AI-агент читает инструкции и оформляет текст. Для проверяемых числовых расчётов требуется **Python 3.10+** в среде агента и разрешение на локальный запуск скриптов.
 
-Официальные пути загрузки Agent Skills (проверены для документации):
-- [Codex / ChatGPT — Build skills](https://learn.chatgpt.com/docs/build-skills): для пользователя `~/.agents/skills/slovodel/`, для проекта `<repo>/.agents/skills/slovodel/`; выбор навыка через `/skills` или `$slovodel`. Самостоятельный навык поддерживается Codex CLI/IDE/ChatGPT desktop; **не обещайте установку отдельной папки как полноценного ChatGPT mobile-плагина**.
+## ChatGPT и Codex
+
+Способ подключения зависит от среды. Сверено с [официальной документацией OpenAI](https://learn.chatgpt.com/docs/build-skills) 29 октября 2026 года.
+
+| Среда | Подключение и вызов | Исполнение Python |
+|---|---|---|
+| Codex CLI / IDE / локальный Codex | Папка `.agents/skills/slovodel`; явный вызов `$slovodel` или выбор через `/skills` | Когда доступны файлы, интерпретатор и разрешение на исполнение |
+| ChatGPT desktop с поддержкой отдельных навыков | Использовать доступный интерфейс Skills; явный выбор через `@` | Проверять возможности конкретной задачи |
+| ChatGPT Chat / Work на web, desktop, mobile через плагин | Навык распространяется внутри установленного плагина; обновление GitHub само по себе не обновляет установленный пакет | Не предполагать доступ к локальному Python |
+
+Репозиторий выпускает автономный каталог навыка. ZIP этой папки не является универсальным пакетом плагина для всех продуктов. Права аккаунта и реальный вызов модели проверяются отдельно; без Python доступна качественная работа по всей методологии.
+
+Пути отдельных навыков и дополнительная поддерживаемая среда:
+- [Codex — Build skills](https://learn.chatgpt.com/docs/build-skills): для пользователя `~/.agents/skills/slovodel/`, для проекта `<repo>/.agents/skills/slovodel/`; выбор навыка через `/skills` или `$slovodel`. Самостоятельный навык поддерживается Codex CLI/IDE/ChatGPT desktop; **не обещайте установку отдельной папки как полноценного ChatGPT mobile-плагина**.
 - [Claude Code — Skills](https://code.claude.com/docs/en/skills): пользовательская директория `~/.claude/skills/slovodel/`, проектная `<repo>/.claude/skills/slovodel/`; явный вызов `/slovodel`. Не путать Claude Code с Claude web/синхронизацией аккаунта.
 
 ## Чистая установка из GitHub
@@ -11,7 +23,7 @@
 Сначала скачай **конкретную опубликованную версию** в отдельную временную директорию. Для Linux/macOS (с установленным Git):
 
 ```bash
-git clone --depth 1 --branch v0.7.0 https://github.com/rubigotrafikcash-gif/slovodel.git slovodel-release
+git clone --depth 1 --branch v0.8.1 https://github.com/rubigotrafikcash-gif/slovodel.git slovodel-release
 
 # Установить в Codex (один раз, если такого каталога ещё нет):
 mkdir -p "$HOME/.agents/skills"
@@ -27,7 +39,7 @@ cp -R slovodel-release/skills/slovodel "$HOME/.claude/skills/slovodel"
 Для Windows PowerShell:
 
 ```powershell
-git clone --depth 1 --branch v0.7.0 https://github.com/rubigotrafikcash-gif/slovodel.git slovodel-release
+git clone --depth 1 --branch v0.8.1 https://github.com/rubigotrafikcash-gif/slovodel.git slovodel-release
 
 # Codex:
 New-Item -ItemType Directory -Force "$HOME/.agents/skills" | Out-Null
@@ -55,7 +67,7 @@ python "$HOME/.agents/skills/slovodel/scripts/analyze.py" --help
 
 **Windows и кодировки (с 0.8.0).** JSON в stdout всегда выводится в UTF-8, поэтому команды работают и в консоли с английской кодовой страницей. Входные файлы должны быть в UTF-8: в Windows PowerShell 5.1 `"текст" > file.txt` пишет UTF-16 и даст `INPUT_NOT_UTF8` — используй `Set-Content -Encoding utf8 file.txt` или файл, созданный агентом/редактором в UTF-8.
 
-**Claude.ai (вкладка Customize → Skills).** Загрузи `slovodel-v0.8.0.zip` из GitHub Release целиком. Старая версия навыка в аккаунте не обновляется сама — удали её и загрузи новый архив, затем начни новый чат.
+**Claude.ai (вкладка Customize → Skills).** Загрузи `slovodel-v0.8.1.zip` из GitHub Release целиком. Старая версия навыка в аккаунте не обновляется сама — удали её и загрузи новый архив, затем начни новый чат.
 
 После запуска AI-агента проверь, что навык `slovodel` обнаружен, и отдельно проведи задания `audit`, `rewrite`, `create`, `compare` из [плана реальных агентских испытаний](https://github.com/rubigotrafikcash-gif/slovodel/blob/main/evals/cases.md). **Успешная проверка структуры файлов или CLI не равна проверке активации навыка реальным агентом.** Для Codex/Claude обязательно записывай фактическую версию клиента и сохранённый ответ; если агент не запускался — `NOT_RUN`.
 
@@ -69,7 +81,7 @@ python "$HOME/.agents/skills/slovodel/scripts/analyze.py" --help
 
 | Возможность | Дополнительные условия |
 |---|---|
-| Базовый анализ A1/A3/A4/A6/A7/A9, A8 fact-guard (rules 2.0), четыре режима, экспериментальная арифметика Журавлёва на данных пользователя | Python 3.10+, без дополнительных Python-пакетов; все схемы JSON внутри `schemas/` |
+| Базовый анализ A1/A3/A4/A6/A7/A9, A8 fact-guard (rules 2.1), четыре режима, экспериментальная арифметика Журавлёва на данных пользователя | Python 3.10+, без дополнительных Python-пакетов; все схемы JSON внутри `schemas/` |
 | Строгая внешняя валидация JSON Schema | Необязательный `jsonschema==4.25.1` (для пользователя не обязателен) |
 | Русские части речи A5 | **Только при явном `--morphology`**: `pymorphy3==2.0.6` (MIT) + `pymorphy3-dicts-ru==2.4.417150.4580142` (код MIT; **данные словаря CC BY-SA 3.0**) |
 | A2 сравнение буквенных частот | `--reference` с предоставленным пользователем собственным профилем, объявленным **ненормативным**, права на источник пользователь проверяет самостоятельно |
@@ -81,4 +93,4 @@ python "$HOME/.agents/skills/slovodel/scripts/analyze.py" --help
 
 GitHub Actions на Linux, Windows и macOS ставит **копию одной папки** `skills/slovodel` в два временных дерева с путями Codex и Claude Code, убирает возможность использовать остальные файлы репозитория как импортируемые модули, запускает четыре режима Python из третьего каталога с `python -I`, проверяет JSON и `blocked` на разнице сумм, сводит версии внешних и встроенных схем. Проверка выполняется без реальных учётных данных. Это **подтверждённая проверка переносимости каталога и исполняемого слоя**, но **НЕ** запуск самих моделей Codex/Claude и не тест реального выбора навыка из меню, которые могут требовать установленный клиент и авторизацию.
 
-Выпуск `v0.8.0` содержит проверенный публичный пакет; следи за [GitHub Release](https://github.com/rubigotrafikcash-gif/slovodel/releases). Не копируй в публичный репозиторий пользовательские исходники/скриншоты/токены.
+Статус выпуска `v0.8.1` и проведённых проверок указан в заметках к нему; следи за [GitHub Release](https://github.com/rubigotrafikcash-gif/slovodel/releases). Не копируй в публичный репозиторий пользовательские исходники/скриншоты/токены.

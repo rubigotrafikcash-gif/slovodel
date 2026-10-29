@@ -1,6 +1,6 @@
 """A8 deterministic *risk screening* of edits, not semantic equivalence.
 
-Rules 2.0 (Core 0.8.0) separate two severities:
+Rules 2.1 (Core 0.8.1) separate two severities:
 
 * ``blocker`` — a detected protected fact changed (amounts, numbers written in
   digits or words, codes, dates, weekdays/months, names, links, polarity or
@@ -23,7 +23,7 @@ from functools import lru_cache
 
 from . import __version__
 
-VERSION = "a8-rules-2.0"
+VERSION = "a8-rules-2.1"
 NUM = r"(?:\d{1,3}(?:[   ]\d{3})+|\d+)(?:[.,]\d+)?"
 URL = re.compile(r"(?i)(?<!\w)(?:https?://|www\.)[^\s<>\"'«»]+")
 EMAIL = re.compile(r"(?iu)(?<![\w.+-])[\w.+-]+@[\w.-]+\.[a-zа-яё]{2,}")
@@ -93,6 +93,19 @@ QUANTIFIER = re.compile(
 )
 GUARANTEE = re.compile(r"(?iu)(?<!\w)гарант[а-яё]*")
 WORD = re.compile(r"(?u)[^\W\d_]+(?:[-'’][^\W\d_]+)*")
+
+# Bounded commercial context; these are risk indicators, not semantic parsing.
+_PRICE_BOUND = re.compile(
+    r"(?iu)(?<!\w)(не\s+менее|не\s+более|начиная\s+с|от|до)[\s:—–-]*$"
+)
+_RATE = re.compile(
+    r"(?iu)^\s*(?:в|за|/)\s*(час(?:а|ов)?|день|дня|дней|сутки|суток|"
+    r"недел[а-яё]*|месяц[а-яё]*|год(?:а|ов)?)(?!\w)"
+)
+_PAYMENT_ROLE = re.compile(r"(?iu)(?<!\w)(предоплат[а-яё]*|аванс[а-яё]*|скидк[а-яё]*|залог[а-яё]*)(?!\w)")
+_FREE = re.compile(r"(?iu)(?<!\w)бесплатн[а-яё]*(?!\w)")
+_DATE_RELATION = re.compile(r"(?iu)(?<!\w)(не\s+позднее|не\s+раньше|после|до|с|к)[\s:—–-]*$")
+_AUDIENCE = re.compile(r"(?iu)(?<!\w)(?:помогаем|поможем|работаем\s+с|для)\s+([^.!?;\n]{1,100})")
 
 _UNITS = {
     0: "ноль нуль нуля ноля нулю нолю",
@@ -211,6 +224,8 @@ SEVERITY = {
     "person": BLOCKER, "proper_name": BLOCKER, "polarity": BLOCKER,
     "modality": BLOCKER, "guarantee": BLOCKER, "protected_term": BLOCKER,
     "condition": REVIEW, "quantifier": REVIEW,
+    "commercial_term": BLOCKER,
+    "initial_capital": REVIEW, "audience_context": REVIEW,
 }
 CATEGORIES = tuple(SEVERITY)
 WARNINGS = [
@@ -282,6 +297,97 @@ def _ordinal(match: re.Match) -> str:
 
 def _calendar(match: re.Match) -> str:
     return stem(match.group())
+
+
+def _commercial_facts(text: str) -> Counter:
+    """Bind a price qualifier, billing period or payment role to its value."""
+    result: Counter = Counter()
+    for regex, formatter in ((MONEY, _money), (MONEY_PREFIX, _money),
+                             (QUANTITY, lambda m: _compact(m.group()))):
+        for match in regex.finditer(text):
+            prior = text[max(0, match.start() - 80):match.start()]
+            prior = re.split(r"[.!?;\n]", prior)[-1]
+            key = formatter(match)
+            roles = list(_PAYMENT_ROLE.finditer(prior))
+            if roles:
+                raw = roles[-1].group().casefold()
+                role = ("prepayment" if raw.startswith(("предоплат", "аванс"))
+                        else "discount" if raw.startswith("скидк") else "deposit")
+                result["role:" + key + ":" + role] += 1
+            if regex is QUANTITY:
+                continue
+            bound = _PRICE_BOUND.search(prior)
+            if bound:
+                raw = _compact(bound.group(1))
+                side = "min" if raw in ("от", "не менее", "начиная с") else "max"
+                result["bound:" + key + ":" + side] += 1
+            rate = _RATE.match(text[match.end():match.end() + 40])
+            if rate:
+                word = rate.group(1).casefold()
+                period = ("month" if word.startswith("месяц") else
+                          "week" if word.startswith("недел") else
+                          "year" if word.startswith("год") else
+                          "hour" if word.startswith("час") else "day")
+                result["rate:" + key + ":" + period] += 1
+    for match in DATE.finditer(text):
+        prior = text[max(0, match.start() - 30):match.start()]
+        relation = _DATE_RELATION.search(prior)
+        if relation:
+            raw = _compact(relation.group(1))
+            raw = {"не позднее": "до", "к": "до"}.get(raw, raw)
+            result["date:" + _compact(match.group()) + ":" + raw] += 1
+    result["free_claim"] = len(_FREE.findall(text))
+    return result
+
+
+def _initial_capitals(text: str) -> Counter:
+    """A changed capitalized start in shared context warrants review, not NER."""
+    words = list(WORD.finditer(text))
+    result: Counter = Counter()
+    for index, match in enumerate(words):
+        word = match.group()
+        if not word[0].isupper() or not _sentence_initial(text, match.start()):
+            continue
+        following = words[index + 1:index + 4]
+        if not following or re.search(r"[.!?;\n]", text[match.end():following[-1].end()]):
+            continue
+        context = " ".join(stem(w.group()) for w in following)
+        result[context + "\x1f" + stem(word)] += 1
+    return result
+
+
+def _audience_context(text: str) -> Counter:
+    stop = {"в", "с", "на", "по", "к", "о", "об", "и", "мы", "вы"}
+    return Counter(" ".join(stem(w) for w in WORD.findall(m.group(1))
+                            if w.casefold() not in stop)
+                   for m in _AUDIENCE.finditer(text))
+
+
+def _cardinal_quantities(text: str) -> str:
+    """Normalize single-token cardinals before units for equivalence checking.
+
+    Compound numbers, ordinals and implied units remain conservative. This
+    helper is not used to rewrite the user's text or protected expressions.
+    """
+    masked = text
+    for regex in (URL, EMAIL):
+        masked, _ = _extract_spans(masked, regex)
+    words = list(_WORD_RUN.finditer(masked))
+    parts: list[str] = []
+    end = 0
+    for index, match in enumerate(words):
+        value = NUMBER_WORDS.get(match.group().casefold())
+        if value is None or Decimal(value) >= 1000:
+            continue
+        if index and words[index - 1].group().casefold() in NUMBER_WORDS:
+            continue
+        following = masked[match.end():match.end() + 40]
+        if not QUANTITY.match(value + following):
+            continue
+        parts.extend((masked[end:match.start()], value))
+        end = match.end()
+    parts.append(masked[end:])
+    return "".join(parts)
 
 
 def _extract_spans(text: str, pattern: re.Pattern, formatter=None,
@@ -401,7 +507,8 @@ def _proper_name_seeds(text: str) -> set[str]:
     for m in WORD.finditer(text):
         word = m.group()
         latin = all(ch.isascii() for ch in word if ch.isalpha())
-        if latin or (word[0].isupper() and not _sentence_initial(text, m.start())):
+        marked_case = any(ch.isupper() for ch in word[1:])
+        if latin or marked_case or (word[0].isupper() and not _sentence_initial(text, m.start())):
             seeds.add(stem(word))
     return seeds
 
@@ -447,6 +554,12 @@ def inventory(text: str, terms: tuple[str, ...] = (),
     counts: dict[str, Counter] = {kind: Counter() for kind in CATEGORIES}
     for term in terms:
         counts["protected_term"][term] = protected_count(text, term)
+    masked = text
+    for regex in (URL, EMAIL):
+        masked, _ = _extract_spans(masked, regex)
+    counts["commercial_term"] = _commercial_facts(masked)
+    counts["initial_capital"] = _initial_capitals(masked)
+    counts["audience_context"] = _audience_context(masked)
     masked = text
     positions: list[tuple[int, str, str]] = []
     for name, regex, formatter, trim in (
@@ -557,8 +670,23 @@ def check(before: str, after: str, terms: tuple[str, ...] = ()) -> dict:
     seeds, base = _shared_context(before, after)
     left = inventory(before, terms, seeds, base)
     right = inventory(after, terms, seeds, base)
+    # Preserve historical finding categories, but suppress numeric differences
+    # that disappear after a supported word-to-digit normalization. Context
+    # bindings are compared too, so swapping two equivalent amounts still fails.
+    equivalent_numeric: set[str] = set()
+    if left["number_word"] != right["number_word"]:
+        canonical_before = _cardinal_quantities(normalize(before))
+        canonical_after = _cardinal_quantities(normalize(after))
+        if canonical_before != normalize(before) or canonical_after != normalize(after):
+            canonical_left = inventory(canonical_before, (), seeds, base)
+            canonical_right = inventory(canonical_after, (), seeds, base)
+            if all(canonical_left[kind] == canonical_right[kind] for kind in _NUMERIC_KINDS):
+                equivalent_numeric = {kind for kind in (*_NUMERIC_KINDS, "binding", "commercial_term")
+                                      if canonical_left[kind] == canonical_right[kind]}
     findings = []
     for kind in CATEGORIES:
+        if kind in equivalent_numeric:
+            continue
         old, new = left[kind], right[kind]
         if kind == "polarity":
             missing, added = _polarity_changed(old, new)
@@ -567,7 +695,7 @@ def check(before: str, after: str, terms: tuple[str, ...] = ()) -> dict:
             flipped = _flip((old["may"], old["must"]), (new["may"], new["must"]))
             missing = added = int(flipped)
             before_count, after_count = sum(old.values()), sum(new.values())
-        elif kind == "binding":
+        elif kind in ("binding", "initial_capital"):
             missing, added = _binding_changed(old, new)
             before_count, after_count = sum(old.values()), sum(new.values())
         else:
