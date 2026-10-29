@@ -20,7 +20,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILL = ROOT / "skills" / "slovodel"
-SCHEMA_NAMES = ("analysis", "compare", "fact-guard", "local-reference", "workflow")
+SCHEMA_NAMES = ("analysis", "compare", "fact-guard", "local-reference", "workflow", "zhuravlev-experimental")
 REQUIRED = (
     "SKILL.md", "LICENSE", "scripts/workflow.py", "scripts/analyze.py",
     "scripts/compare.py", "scripts/validate.py", "scripts/build_reference.py",
@@ -29,6 +29,8 @@ REQUIRED = (
     "assets/voice-brief.md", "references/agent-workflow.md",
     "references/compliance.md", "references/morphology-licenses.md",
     "references/corpus-license-review.md",
+    "references/methodology.md", "references/method-in-practice.md",
+    "references/natural-russian.md",
 )
 LINK = re.compile(r"(?<!!)\[[^]]+\]\(([^)]+)\)")
 
