@@ -53,6 +53,7 @@ QUANTITY = re.compile(
 )
 _MEASURE_UNIT = r"кв\.[ \t]*м\.?|м[²2]|см[²2]|м(?:етр(?:а|ов)?)?|см|мм|мл|л(?:итр(?:а|ов)?)?"
 MEASURE = re.compile(rf"(?iu)(?<!\w)(?P<number>{NUM})\s*(?P<unit>{_MEASURE_UNIT})(?!\w)")
+_MEASURE_LETTER = re.compile(r"[мл]", re.IGNORECASE)
 # Extract a bounded two-line characteristic, not arbitrary preceding prose.
 FIELD_MEASURE = re.compile(
     rf"(?imu)^[ \t]*(?:объ[её]м|площадь|высота|длина|ширина|толщина),[ \t]*"
@@ -134,6 +135,10 @@ def _comparison_glyphs(text: str, peer: str) -> tuple[str, list[dict]]:
     Ambiguous all-lookalike words remain untouched. Avito is an explicit alias,
     activated only by a mixed spelling and its canonical Cyrillic peer.
     """
+    # No mixed token is possible without both scripts. Avoid a Python-level
+    # walk over every word in large, entirely Cyrillic source documents.
+    if not re.search(r"[A-Za-z]", text) or not re.search(r"[А-Яа-яЁё]", text):
+        return text, []
     protected = [m.span() for regex in (URL, EMAIL) for m in regex.finditer(text)]
     protected.sort()
     cursor = 0
@@ -652,6 +657,11 @@ def inventory(text: str, terms: tuple[str, ...] = (),
         ("organization", ORG, None, False),
         ("person", PERSON, None, False),
     ):
+        # Necessary conditions only: these fast paths cannot suppress a match.
+        if regex is FIELD_MEASURE and "\n" not in masked:
+            continue
+        if regex is MEASURE and _MEASURE_LETTER.search(masked) is None:
+            continue
         if regex is NUMBER_WORD:
             masked, found = _extract_number_words(masked)
         else:
