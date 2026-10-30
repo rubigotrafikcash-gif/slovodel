@@ -1,10 +1,10 @@
 # Установка «СловоДела» — аккаунтный плагин и GitHub
 
-Публичный GitHub Release v0.8.2 и аккаунтный плагин имеют отдельный цикл обновления.
-Аккаунтная 0.8.3 установлена и проверена 30 октября 2026 года; 0.8.4 добавляет
-выбор рабочего Python. Обновление GitHub не обновляет установленный плагин
-автоматически: его пакет и версия проверяются отдельно. Команды ниже для
-GitHub v0.8.2 относятся к опубликованному архиву, а не к аккаунтной 0.8.4.
+Это руководство для стабильной версии 0.8.5. GitHub Release и аккаунтный плагин
+имеют отдельный цикл обновления. Обновление GitHub не обновляет установленный
+плагин автоматически: его пакет и версия проверяются отдельно. В 0.8.5 закреплён
+[прямой резервный запуск Python](python-fallback.md) после ошибки инструмента
+runtime или запрета PS1, без изменения политики исполнения и настроек Windows.
 
 При проверке нового кандидата оставляй
 один источник навыка: совпадающие описания старого плагина и кандидата создают
@@ -46,7 +46,7 @@ GitHub v0.8.2 относятся к опубликованному архиву,
 Сначала скачай **конкретную опубликованную версию** в отдельную временную директорию. Для Linux/macOS (с установленным Git):
 
 ```bash
-git clone --depth 1 --branch v0.8.2 https://github.com/rubigotrafikcash-gif/slovodel.git slovodel-release
+git clone --depth 1 --branch v0.8.5 https://github.com/rubigotrafikcash-gif/slovodel.git slovodel-release
 
 # Установить в Codex (один раз, если такого каталога ещё нет):
 mkdir -p "$HOME/.agents/skills"
@@ -62,7 +62,7 @@ cp -R slovodel-release/skills/slovodel "$HOME/.claude/skills/slovodel"
 Для Windows PowerShell:
 
 ```powershell
-git clone --depth 1 --branch v0.8.2 https://github.com/rubigotrafikcash-gif/slovodel.git slovodel-release
+git clone --depth 1 --branch v0.8.5 https://github.com/rubigotrafikcash-gif/slovodel.git slovodel-release
 
 # Codex:
 New-Item -ItemType Directory -Force "$HOME/.agents/skills" | Out-Null
@@ -106,7 +106,7 @@ python "$HOME/.agents/skills/slovodel/scripts/analyze.py" --help
 
 **Windows и кодировки (с 0.8.0).** JSON в stdout всегда выводится в UTF-8, поэтому команды работают и в консоли с английской кодовой страницей. Входные файлы должны быть в UTF-8: в Windows PowerShell 5.1 `"текст" > file.txt` пишет UTF-16 и даст `INPUT_NOT_UTF8` — используй `Set-Content -Encoding utf8 file.txt` или файл, созданный агентом/редактором в UTF-8.
 
-**Claude.ai (вкладка Customize → Skills).** Загрузи `slovodel-v0.8.2.zip` из GitHub Release целиком. Старая версия навыка в аккаунте не обновляется сама — удали её и загрузи новый архив, затем начни новый чат.
+**Claude.ai (вкладка Customize → Skills).** Загрузи `slovodel-v0.8.5.zip` из GitHub Release целиком. Старая версия навыка в аккаунте не обновляется сама — удали её и загрузи новый архив, затем начни новый чат.
 
 После запуска AI-агента проверь, что навык `slovodel` обнаружен, и отдельно проведи задания `audit`, `rewrite`, `create`, `compare` из [плана реальных агентских испытаний](https://github.com/rubigotrafikcash-gif/slovodel/blob/main/evals/cases.md). **Успешная проверка структуры файлов или CLI не равна проверке активации навыка реальным агентом.** Для Codex/Claude обязательно записывай фактическую версию клиента и сохранённый ответ; если агент не запускался — `NOT_RUN`.
 
