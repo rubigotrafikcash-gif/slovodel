@@ -1,6 +1,6 @@
 """A8 deterministic *risk screening* of edits, not semantic equivalence.
 
-Rules 2.2 (Core 0.8.2) separate two severities:
+Rules 2.3 (Core 0.8.2) separate two severities:
 
 * ``blocker`` — a detected protected fact changed (amounts, numbers written in
   digits or words, codes, dates, weekdays/months, names, links, polarity or
@@ -328,7 +328,7 @@ def stem(word: str) -> str:
     return w
 
 
-def _amount(s: str, scale: str = "") -> str:
+def _amount_uncached(s: str, scale: str = "") -> str:
     try:
         num = Decimal(s.replace(" ", "").replace(",", "."))
         if scale.startswith(("тыс", "тысяч")):
@@ -340,13 +340,34 @@ def _amount(s: str, scale: str = "") -> str:
         return "INVALID_AMOUNT"
 
 
-def _money(match: re.Match) -> str:
-    raw = _compact(match.group("currency"))
+_small_amount = lru_cache(maxsize=4096)(_amount_uncached)
+
+
+def _amount(s: str, scale: str = "") -> str:
+    # Dense price tables repeat short values in extraction and commercial rules.
+    # Bound both key count and key length; long inputs never enter the cache.
+    if len(s) <= 64 and len(scale) <= 32:
+        return _small_amount(s, scale)
+    return _amount_uncached(s, scale)
+
+
+def _money_value(number: str, scale: str, raw_currency: str) -> str:
+    raw = _compact(raw_currency)
     currency = "RUB" if raw.startswith(("руб", "₽")) else (
         "EUR" if raw in ("eur", "€") else "USD"
     )
-    scale = _compact(match.groupdict().get("scale") or "")
-    return currency + ":" + _amount(match.group("number"), scale)
+    scale = _compact(scale)
+    return currency + ":" + _amount(number, scale)
+
+
+_small_money = lru_cache(maxsize=4096)(_money_value)
+
+
+def _money(match: re.Match) -> str:
+    number = match.group('number')
+    scale = (match.group('scale') or '') if match.re is MONEY else ''
+    fn = _small_money if len(number) <= 64 else _money_value
+    return fn(number, scale, match.group('currency'))
 
 
 def _measure(match: re.Match) -> str:
