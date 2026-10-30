@@ -85,8 +85,9 @@ class FactGuardTests(unittest.TestCase):
         self.assertIn("deadline", kinds(
             "Отклики до пятницы", "Отклики до четверга"))
 
-    def test_date_format_change_conservatively_blocked(self):
-        self.assertIn("date", kinds("15.10.2026", "2026-10-15"))
+    def test_equivalent_full_date_formats(self):
+        self.assertNotIn("date", kinds("15.10.2026", "2026-10-15"))
+        self.assertIn("date", kinds("15.10.2026", "2026-10-16"))
 
     def test_range_upper_bound_detected(self):
         self.assertIn("range", kinds("От 5 до 7 дней", "От 5 до 9 дней"))

@@ -22,8 +22,9 @@ from decimal import Decimal, InvalidOperation
 from functools import lru_cache
 
 from . import __version__
+from .equivalence import date_key
 
-VERSION = "a8-rules-2.2"
+VERSION = "a8-rules-2.3"
 NUM = r"(?:\d{1,3}(?:[   ]\d{3})+|\d+)(?:[.,]\d+)?"
 URL = re.compile(r"(?i)(?<!\w)(?:https?://|www\.)[^\s<>\"'«»]+")
 EMAIL = re.compile(r"(?iu)(?<![\w.+-])[\w.+-]+@[\w.-]+\.[a-zа-яё]{2,}")
@@ -643,7 +644,7 @@ def inventory(text: str, terms: tuple[str, ...] = (),
         ("email", EMAIL, None, False),
         ("money", MONEY, _money, False),
         ("money", MONEY_PREFIX, _money, False),
-        ("date", DATE, None, False),
+        ("date", DATE, lambda m: date_key(m.group()), False),
         ("deadline", DEADLINE, None, False),
         ("calendar", CALENDAR, _calendar, False),
         ("range", RANGE, None, False),
@@ -655,7 +656,7 @@ def inventory(text: str, terms: tuple[str, ...] = (),
         ("number_word", ORDINAL, _ordinal, False),
         ("number_word", NUMBER_WORD, _number_word, False),
         ("organization", ORG, None, False),
-        ("person", PERSON, None, False),
+        ("person", PERSON, lambda m: ' '.join(sorted(_compact(m.group()).split())), False),
     ):
         # Necessary conditions only: these fast paths cannot suppress a match.
         if regex is FIELD_MEASURE and "\n" not in masked:
@@ -753,12 +754,20 @@ def check(before: str, after: str, terms: tuple[str, ...] = ()) -> dict:
     original_before, original_after = before, after
     before, before_changes = _comparison_glyphs(original_before, original_after)
     after, after_changes = _comparison_glyphs(original_after, original_before)
+    from .equivalence import paired
+    uncanonical = before, after
+    before, after = paired(before, after, PERSON)
+    equivalence_used = uncanonical != (before, after)
     seeds, base = _shared_context(before, after)
     left = inventory(before, terms, seeds, base)
     right = inventory(after, terms, seeds, base)
     # Explicit literal phrases remain exact, even when visual spelling is repaired.
     left["protected_term"] = Counter({t: protected_count(original_before, t) for t in terms})
     right["protected_term"] = Counter({t: protected_count(original_after, t) for t in terms})
+    # URLs and contacts remain exact even if a person-like span abuts a link.
+    for kind, regex in (('url', URL), ('email', EMAIL)):
+        left[kind] = Counter(v for _,v in _extract_spans(original_before,regex,trim_url=kind=='url')[1])
+        right[kind] = Counter(v for _,v in _extract_spans(original_after,regex,trim_url=kind=='url')[1])
     # Preserve historical finding categories, but suppress numeric differences
     # that disappear after a supported word-to-digit normalization. Context
     # bindings are compared too, so swapping two equivalent amounts still fails.
@@ -773,6 +782,7 @@ def check(before: str, after: str, terms: tuple[str, ...] = ()) -> dict:
                 equivalent_numeric = {kind for kind in (*_NUMERIC_KINDS, "binding", "commercial_term")
                                       if canonical_left[kind] == canonical_right[kind]}
     findings = []
+    known_names = {stem(w) for w in WORD.findall(before) if w[0].isupper()}
     for kind in CATEGORIES:
         if kind in equivalent_numeric:
             continue
@@ -794,7 +804,8 @@ def check(before: str, after: str, terms: tuple[str, ...] = ()) -> dict:
         if missing or added:
             findings.append({
                 "kind": kind,
-                "severity": SEVERITY[kind],
+                "severity": (REVIEW if kind == 'proper_name' and not missing
+                             and set(new - old) <= known_names else SEVERITY[kind]),
                 "before_count": before_count,
                 "after_count": after_count,
                 "removed_count": missing,
@@ -806,6 +817,10 @@ def check(before: str, after: str, terms: tuple[str, ...] = ()) -> dict:
     decision = ("blocked" if blocking else
                 "unchanged" if unchanged else "review_required")
     warnings = list(WARNINGS)
+    if equivalence_used:
+        warnings.append('BOUNDED_COMPARISON_EQUIVALENCE_REVIEW_ORIGINALS')
+    if re.findall(r'(?<=[а-яё».)])\[\d{1,3}\]', original_before, re.I) != re.findall(r'(?<=[а-яё».)])\[\d{1,3}\]', original_after, re.I):
+        warnings.append('ATTACHED_REFERENCE_MARKERS_CHANGED_REVIEW')
     if before_changes or after_changes:
         warnings.append("COMPARISON_GLYPHS_NORMALIZED_REVIEW_ORIGINALS")
     if any(left["temporal_context"].values()) or any(right["temporal_context"].values()):
