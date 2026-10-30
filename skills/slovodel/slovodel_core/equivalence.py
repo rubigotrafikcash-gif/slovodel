@@ -68,6 +68,19 @@ def date_key(raw):
 
 def _prepare_plain(text):
     text=numbers(text)
+    # Conventional standalone article section labels are layout, not proper names.
+    # Keep the words; never exempt a heading with names, values or extra content.
+    if '\n' in text:
+        text=re.sub(r'(?m)^[ \t]*(?:МАТЕРИАЛ(?:Ы)? И МЕТОДЫ|РЕЗУЛЬТАТЫ|ОБСУЖДЕНИЕ|ЗАКЛЮЧЕНИЕ)[ \t]*$',
+                    lambda m:m.group().lower(),text)
+    # Only typographic variants of the same numeric endpoints, not arbitrary dashes.
+    if '-' in text or '–' in text or '—' in text:
+        text=re.sub(r'(?<![\w–—-])(\d+(?:[.,]\d+)?)\s*[-–—]\s*(\d+(?:[.,]\d+)?)(?![\w–—-])',
+                    r'\1–\2',text)
+    # Same stated unit/rate, no conversion or inferred period.
+    if 'сут' in text.casefold():
+        text=re.sub(r'(?iu)(?<!\w)(\d+(?:[.,]\d+)?)\s*(?:ч\s*/\s*сут(?:ки)?|час(?:а|ов)?\s+в\s+сутки)(?!\w)',
+                    r'\1 часов в сутки',text)
     if 'гг.' in text.casefold():
         text=re.sub(r'(?iu)(\b\d{4})\s+гг\.',r'\1 год.',text)
     # Shared monetary unit in a tightly bounded two-amount list.

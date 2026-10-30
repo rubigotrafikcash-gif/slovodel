@@ -82,7 +82,10 @@ class CopywriterV07(unittest.TestCase):
 
     def test_correct_user_language(self):
         skill=(ROOT/"skills/slovodel/SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("для создания и улучшения текстов на русском языке",skill)
+        # Discovery wording may name all four editorial modes. Keep the language
+        # boundary without pinning the entire former marketing description.
+        description=next(line for line in skill.splitlines() if line.startswith('description:'))
+        self.assertIn("на русском",description)
         self.assertNotIn("AI-копирайтер для русского языка",skill)
 
 if __name__=="__main__":

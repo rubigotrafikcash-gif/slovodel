@@ -1,6 +1,6 @@
 """A8 deterministic *risk screening* of edits, not semantic equivalence.
 
-Rules 2.3 (Core 0.8.2) separate two severities:
+Rules 2.5 (Core 0.8.3) separate two severities:
 
 * ``blocker`` — a detected protected fact changed (amounts, numbers written in
   digits or words, codes, dates, weekdays/months, names, links, polarity or
@@ -23,8 +23,9 @@ from functools import lru_cache
 
 from . import __version__
 from .equivalence import date_key
+from .modality import MAY, MUST, changes as modality_changes
 
-VERSION = "a8-rules-2.3"
+VERSION = "a8-rules-2.5"
 NUM = r"(?:\d{1,3}(?:[   ]\d{3})+|\d+)(?:[.,]\d+)?"
 URL = re.compile(r"(?i)(?<!\w)(?:https?://|www\.)[^\s<>\"'«»]+")
 EMAIL = re.compile(r"(?iu)(?<![\w.+-])[\w.+-]+@[\w.-]+\.[a-zа-яё]{2,}")
@@ -105,13 +106,17 @@ WORD = re.compile(r"(?u)[^\W\d_]+(?:[-'’][^\W\d_]+)*")
 
 # Bounded commercial context; these are risk indicators, not semantic parsing.
 _PRICE_BOUND = re.compile(
-    r"(?iu)(?<!\w)(не\s+менее|не\s+более|начиная\s+с|от|до)[\s:—–-]*$"
+    r"(?iu)(?<!\w)(не\s+менее|не\s+более|менее|более|начиная\s+с|от|до)[\s:—–-]*$"
 )
 _RATE = re.compile(
     r"(?iu)^\s*(?:в|за|/)\s*(час(?:а|ов)?|день|дня|дней|сутки|суток|"
     r"недел[а-яё]*|месяц[а-яё]*|год(?:а|ов)?)(?!\w)"
 )
 _PAYMENT_ROLE = re.compile(r"(?iu)(?<!\w)(предоплат[а-яё]*|аванс[а-яё]*|скидк[а-яё]*|залог[а-яё]*)(?!\w)")
+_COMMERCIAL_LOOP_CUE = re.compile(
+    r"(?iu)(?<!\w)(?:предоплат[а-яё]*|аванс[а-яё]*|скидк[а-яё]*|залог[а-яё]*|"
+    r"от|до|менее|более|начиная|в|за)(?!\w)|/"
+)
 _FREE = re.compile(r"(?iu)(?<!\w)бесплатн[а-яё]*(?!\w)")
 _DATE_RELATION = re.compile(r"(?iu)(?<!\w)(не\s+позднее|не\s+раньше|после|до|с|к)[\s:—–-]*$")
 _AUDIENCE = re.compile(r"(?iu)(?<!\w)(?:помогаем|поможем|работаем\s+с|для)\s+([^.!?;\n]{1,100})")
@@ -258,11 +263,6 @@ POLARITY_PAIRS = (
     (("возможн",), ("невозможн",)),
     (("обязательн",), ("необязательн",)),
 )
-MAY = frozenset(("может", "могут", "можете", "можем", "вправе", "допускается",
-                 "разрешается"))
-MUST = frozenset(("должен", "должна", "должно", "должны", "обязан", "обязана",
-                  "обязаны", "обязательно", "обязательна", "обязателен",
-                  "обязательны", "необходимо", "требуется", "нужно"))
 ANCHOR_STOP = frozenset((
     "для", "при", "около", "всего", "только", "лишь", "уже", "это", "все",
     "его", "её", "нас", "вас", "они", "она", "оно", "руб", "рублей", "рубля",
@@ -397,8 +397,11 @@ def _calendar(match: re.Match) -> str:
 def _commercial_facts(text: str) -> Counter:
     """Bind a price qualifier, billing period or payment role to its value."""
     result: Counter = Counter()
-    for regex, formatter in ((MONEY, _money), (MONEY_PREFIX, _money),
-                             (QUANTITY, lambda m: _compact(m.group()))):
+    # Without any role, bound or rate cue the value loop cannot emit a fact.
+    # Keep date relations and free-claim checks below independent of this gate.
+    patterns = ((MONEY, _money), (MONEY_PREFIX, _money),
+                (QUANTITY, lambda m: _compact(m.group()))) if _COMMERCIAL_LOOP_CUE.search(text) else ()
+    for regex, formatter in patterns:
         for match in regex.finditer(text):
             prior = text[max(0, match.start() - 80):match.start()]
             prior = re.split(r"[.!?;\n]", prior)[-1]
@@ -409,13 +412,14 @@ def _commercial_facts(text: str) -> Counter:
                 role = ("prepayment" if raw.startswith(("предоплат", "аванс"))
                         else "discount" if raw.startswith("скидк") else "deposit")
                 result["role:" + key + ":" + role] += 1
-            if regex is QUANTITY:
-                continue
             bound = _PRICE_BOUND.search(prior)
             if bound:
                 raw = _compact(bound.group(1))
-                side = "min" if raw in ("от", "не менее", "начиная с") else "max"
+                side = ("gt" if raw == 'более' else "lt" if raw == 'менее' else
+                        "min" if raw in ("от", "не менее", "начиная с") else "max")
                 result["bound:" + key + ":" + side] += 1
+            if regex is QUANTITY:
+                continue
             rate = _RATE.match(text[match.end():match.end() + 40])
             if rate:
                 word = rate.group(1).casefold()
@@ -803,6 +807,7 @@ def check(before: str, after: str, terms: tuple[str, ...] = ()) -> dict:
                 equivalent_numeric = {kind for kind in (*_NUMERIC_KINDS, "binding", "commercial_term")
                                       if canonical_left[kind] == canonical_right[kind]}
     findings = []
+    modal_removed, modal_added, modal_severity = modality_changes(before, after)
     known_names = {stem(w) for w in WORD.findall(before) if w[0].isupper()}
     for kind in CATEGORIES:
         if kind in equivalent_numeric:
@@ -812,8 +817,7 @@ def check(before: str, after: str, terms: tuple[str, ...] = ()) -> dict:
             missing, added = _polarity_changed(old, new)
             before_count = after_count = missing
         elif kind == "modality":
-            flipped = _flip((old["may"], old["must"]), (new["may"], new["must"]))
-            missing = added = int(flipped)
+            missing, added = modal_removed, modal_added
             before_count, after_count = sum(old.values()), sum(new.values())
         elif kind in ("binding", "initial_capital"):
             missing, added = _binding_changed(old, new)
@@ -825,7 +829,7 @@ def check(before: str, after: str, terms: tuple[str, ...] = ()) -> dict:
         if missing or added:
             findings.append({
                 "kind": kind,
-                "severity": (REVIEW if kind == 'proper_name' and not missing
+                "severity": (modal_severity if kind == 'modality' else REVIEW if kind == 'proper_name' and not missing
                              and set(new - old) <= known_names else SEVERITY[kind]),
                 "before_count": before_count,
                 "after_count": after_count,
