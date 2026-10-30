@@ -26,11 +26,12 @@ REQUIRED = (
     "scripts/compare.py", "scripts/validate.py", "scripts/build_reference.py",
     "slovodel_core/__init__.py", "slovodel_core/workflow.py",
     "slovodel_core/metrics.py", "slovodel_core/fact_guard.py",
+    "slovodel_core/context.py", "slovodel_core/equivalence.py",
     "assets/voice-brief.md", "references/agent-workflow.md",
     "references/compliance.md", "references/morphology-licenses.md",
     "references/corpus-license-review.md",
     "references/methodology.md", "references/method-in-practice.md",
-    "references/natural-russian.md",
+    "references/natural-russian.md", "references/semantic-review.md",
 )
 LINK = re.compile(r"(?<!!)\[[^]]+\]\(([^)]+)\)")
 

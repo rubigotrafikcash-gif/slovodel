@@ -1,4 +1,8 @@
-# Установка публичного «СловоДела» — v0.8.1
+# Установка публичного «СловоДела» — v0.8.2
+
+Это инструкция для выпуска v0.8.2. Публичный архив и SHA-256 доступны
+на странице GitHub Releases. Обновление GitHub не обновляет установленный
+плагин автоматически: его пакет и версия проверяются отдельно.
 
 **Одна папка `slovodel/` — полный автономный пакет навыка**: `SKILL.md`, `LICENSE`, `references/`, `assets/`, `scripts/`, `slovodel_core/`, `schemas/`. Python не нужен для качественной редактуры: AI-агент читает инструкции и оформляет текст. Для проверяемых числовых расчётов требуется **Python 3.10+** в среде агента и разрешение на локальный запуск скриптов.
 
@@ -23,7 +27,7 @@
 Сначала скачай **конкретную опубликованную версию** в отдельную временную директорию. Для Linux/macOS (с установленным Git):
 
 ```bash
-git clone --depth 1 --branch v0.8.1 https://github.com/rubigotrafikcash-gif/slovodel.git slovodel-release
+git clone --depth 1 --branch v0.8.2 https://github.com/rubigotrafikcash-gif/slovodel.git slovodel-release
 
 # Установить в Codex (один раз, если такого каталога ещё нет):
 mkdir -p "$HOME/.agents/skills"
@@ -39,7 +43,7 @@ cp -R slovodel-release/skills/slovodel "$HOME/.claude/skills/slovodel"
 Для Windows PowerShell:
 
 ```powershell
-git clone --depth 1 --branch v0.8.1 https://github.com/rubigotrafikcash-gif/slovodel.git slovodel-release
+git clone --depth 1 --branch v0.8.2 https://github.com/rubigotrafikcash-gif/slovodel.git slovodel-release
 
 # Codex:
 New-Item -ItemType Directory -Force "$HOME/.agents/skills" | Out-Null
@@ -67,7 +71,7 @@ python "$HOME/.agents/skills/slovodel/scripts/analyze.py" --help
 
 **Windows и кодировки (с 0.8.0).** JSON в stdout всегда выводится в UTF-8, поэтому команды работают и в консоли с английской кодовой страницей. Входные файлы должны быть в UTF-8: в Windows PowerShell 5.1 `"текст" > file.txt` пишет UTF-16 и даст `INPUT_NOT_UTF8` — используй `Set-Content -Encoding utf8 file.txt` или файл, созданный агентом/редактором в UTF-8.
 
-**Claude.ai (вкладка Customize → Skills).** Загрузи `slovodel-v0.8.1.zip` из GitHub Release целиком. Старая версия навыка в аккаунте не обновляется сама — удали её и загрузи новый архив, затем начни новый чат.
+**Claude.ai (вкладка Customize → Skills).** Загрузи `slovodel-v0.8.2.zip` из GitHub Release целиком. Старая версия навыка в аккаунте не обновляется сама — удали её и загрузи новый архив, затем начни новый чат.
 
 После запуска AI-агента проверь, что навык `slovodel` обнаружен, и отдельно проведи задания `audit`, `rewrite`, `create`, `compare` из [плана реальных агентских испытаний](https://github.com/rubigotrafikcash-gif/slovodel/blob/main/evals/cases.md). **Успешная проверка структуры файлов или CLI не равна проверке активации навыка реальным агентом.** Для Codex/Claude обязательно записывай фактическую версию клиента и сохранённый ответ; если агент не запускался — `NOT_RUN`.
 
@@ -93,4 +97,4 @@ python "$HOME/.agents/skills/slovodel/scripts/analyze.py" --help
 
 GitHub Actions на Linux, Windows и macOS ставит **копию одной папки** `skills/slovodel` в два временных дерева с путями Codex и Claude Code, убирает возможность использовать остальные файлы репозитория как импортируемые модули, запускает четыре режима Python из третьего каталога с `python -I`, проверяет JSON и `blocked` на разнице сумм, сводит версии внешних и встроенных схем. Проверка выполняется без реальных учётных данных. Это **подтверждённая проверка переносимости каталога и исполняемого слоя**, но **НЕ** запуск самих моделей Codex/Claude и не тест реального выбора навыка из меню, которые могут требовать установленный клиент и авторизацию.
 
-Статус выпуска `v0.8.1` и проведённых проверок указан в заметках к нему; следи за [GitHub Release](https://github.com/rubigotrafikcash-gif/slovodel/releases). Не копируй в публичный репозиторий пользовательские исходники/скриншоты/токены.
+Статус выпуска `v0.8.2` и проведённых проверок указан в заметках к нему; следи за [GitHub Release](https://github.com/rubigotrafikcash-gif/slovodel/releases). Не копируй в публичный репозиторий пользовательские исходники/скриншоты/токены.

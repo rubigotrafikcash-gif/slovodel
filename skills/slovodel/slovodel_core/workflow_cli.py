@@ -22,13 +22,14 @@ def execute(argv: list[str] | None = None) -> int:
     parser.add_argument("--after", help="Externally edited/second version.")
     parser.add_argument("--protected-file", help="Mandatory phrases, one per line.")
     parser.add_argument("--reference", help="User-supplied NON-normative A2 profile.")
+    parser.add_argument('--context-file', help='Attributed context JSON: text/source records; review only.')
     parser.add_argument("--morphology", action="store_true",
                         help="Use local installed pinned POS backend if available.")
     parser.add_argument("--output", help="Create new JSON file, no overwrite.")
     opts = parser.parse_args(argv)
     single = opts.mode in ("audit", "create")
     if (single and (not opts.input or opts.before or opts.after or
-                    opts.protected_file)) or (
+                    opts.protected_file or opts.context_file)) or (
         not single and (opts.input or not opts.before or not opts.after)
     ):
         parser.error("invalid input files for selected mode")
@@ -53,7 +54,8 @@ def execute(argv: list[str] | None = None) -> int:
         document = build(
             opts.mode, input_doc=inp, before_doc=bef, after_doc=aft,
             reference=reference, morphology=morphology,
-            morphology_reason=morphology_reason, protected_terms=terms
+            morphology_reason=morphology_reason, protected_terms=terms,
+            context_doc=read_text(opts.context_file) if opts.context_file else None
         )
         payload = json.dumps(document, ensure_ascii=False,
                              sort_keys=True, indent=2)

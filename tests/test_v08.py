@@ -35,7 +35,7 @@ def value(text: str, key: str):
 # (name, before, after, category that must be reported)
 REAL_CHANGES = [
     ("number in words", "Доставка за три дня.", "Доставка за пять дней.", "number_word"),
-    ("amount in words", "Стоимость — пять тысяч рублей.", "Стоимость — семь тысяч рублей.", "number_word"),
+    ("amount in words", "Стоимость — пять тысяч рублей.", "Стоимость — семь тысяч рублей.", "money"),
     ("swapped prices", "Сайт 100 000 ₽, лендинг 30 000 ₽.", "Сайт 30 000 ₽, лендинг 100 000 ₽.", "binding"),
     ("swapped terms", "Лендинг за 3 дня, сайт за 10 дней.", "Лендинг за 10 дней, сайт за 3 дня.", "binding"),
     ("fused negation", "Возврат возможен в течение 14 дней.", "Возврат невозможен в течение 14 дней.", "polarity"),
