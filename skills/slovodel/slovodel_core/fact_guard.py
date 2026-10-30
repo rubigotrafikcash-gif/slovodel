@@ -1,6 +1,6 @@
 """A8 deterministic *risk screening* of edits, not semantic equivalence.
 
-Rules 2.4 (Core 0.8.3) separate two severities:
+Rules 2.5 (Core 0.8.3) separate two severities:
 
 * ``blocker`` — a detected protected fact changed (amounts, numbers written in
   digits or words, codes, dates, weekdays/months, names, links, polarity or
@@ -25,7 +25,7 @@ from . import __version__
 from .equivalence import date_key
 from .modality import MAY, MUST, changes as modality_changes
 
-VERSION = "a8-rules-2.4"
+VERSION = "a8-rules-2.5"
 NUM = r"(?:\d{1,3}(?:[   ]\d{3})+|\d+)(?:[.,]\d+)?"
 URL = re.compile(r"(?i)(?<!\w)(?:https?://|www\.)[^\s<>\"'«»]+")
 EMAIL = re.compile(r"(?iu)(?<![\w.+-])[\w.+-]+@[\w.-]+\.[a-zа-яё]{2,}")
@@ -106,7 +106,7 @@ WORD = re.compile(r"(?u)[^\W\d_]+(?:[-'’][^\W\d_]+)*")
 
 # Bounded commercial context; these are risk indicators, not semantic parsing.
 _PRICE_BOUND = re.compile(
-    r"(?iu)(?<!\w)(не\s+менее|не\s+более|начиная\s+с|от|до)[\s:—–-]*$"
+    r"(?iu)(?<!\w)(не\s+менее|не\s+более|менее|более|начиная\s+с|от|до)[\s:—–-]*$"
 )
 _RATE = re.compile(
     r"(?iu)^\s*(?:в|за|/)\s*(час(?:а|ов)?|день|дня|дней|сутки|суток|"
@@ -405,13 +405,14 @@ def _commercial_facts(text: str) -> Counter:
                 role = ("prepayment" if raw.startswith(("предоплат", "аванс"))
                         else "discount" if raw.startswith("скидк") else "deposit")
                 result["role:" + key + ":" + role] += 1
-            if regex is QUANTITY:
-                continue
             bound = _PRICE_BOUND.search(prior)
             if bound:
                 raw = _compact(bound.group(1))
-                side = "min" if raw in ("от", "не менее", "начиная с") else "max"
+                side = ("gt" if raw == 'более' else "lt" if raw == 'менее' else
+                        "min" if raw in ("от", "не менее", "начиная с") else "max")
                 result["bound:" + key + ":" + side] += 1
+            if regex is QUANTITY:
+                continue
             rate = _RATE.match(text[match.end():match.end() + 40])
             if rate:
                 word = rate.group(1).casefold()
