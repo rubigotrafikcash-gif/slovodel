@@ -5,6 +5,7 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -39,7 +40,10 @@ def main() -> None:
     answer=args.answer or (args.input if args.mode=='create' else args.after if args.mode=='rewrite' else None)
     if bounded and not answer:parser.error('word limits require --answer for audit/compare')
     out=Path(args.output_dir)
-    try:out.mkdir(mode=0o700,parents=True,exist_ok=False)
+    # Windows 3.13 interprets 0700 as a new owner-only DACL. In a Codex child
+    # sandbox that locks the desktop user out of their own report directory.
+    # Inherit the trusted workspace ACL on Windows; retain POSIX privacy.
+    try:out.mkdir(mode=0o777 if os.name=='nt' else 0o700,parents=True,exist_ok=False)
     except OSError:
         print('SLOVODEL_ERROR: OUTPUT_DIRECTORY_NOT_NEW',file=sys.stderr)
         raise SystemExit(4) from None
