@@ -107,31 +107,83 @@ def run_cli(skill: Path, outside: Path, mode: str, **paths: str) -> dict:
         cmd, cwd=outside, capture_output=True, encoding="utf-8",
         check=False, timeout=30, env={**os.environ, "PYTHONPATH": ""},
     )
-    wanted_exit = 5 if mo…8173 tokens truncated… метрики оригинала нужны для плана редактуры; иначе достаточно одного `--mode rewrite`, а отдельный `validate.py` не запускается (A8 уже внутри). Нельзя утверждать, что вызов автоматически направляет AI.
+    wanted_exit = 5 if mode == "rewrite" else 0
+    if result.returncode != wanted_exit:
+        raise AssertionError("PORTABLE_CLI_FAIL:" + mode + ":exit=" + str(result.returncode)
+                             + ":stderr=" + result.stderr[:150])
+    data = json.loads(result.stdout)
+    if data["mode"] != mode or data["execution"] != "local_core_executed":
+        raise AssertionError("PORTABLE_CLI_MODE_MISMATCH:" + mode)
+    if data["publication_ready"] is not False:
+        raise AssertionError("PORTABLE_CLI_FALSE_APPROVAL:" + mode)
+    if mode == "rewrite" and (data["decision"] != "blocked" or
+                              data["fact_guard"]["decision"] != "blocked"):
+        raise AssertionError("PORTABLE_CLI_GUARD_FAILED")
+    if mode == "compare" and data["fact_guard"]["decision"] != "blocked":
+        raise AssertionError("PORTABLE_COMPARE_GUARD_FAILED")
+    if mode == "audit" and data["pre_analysis"]["mode"] != "audit":
+        raise AssertionError("PORTABLE_AUDIT_FAILED")
+    if mode == "create" and data["post_analysis"]["mode"] != "audit":
+        raise AssertionError("PORTABLE_CREATE_FAILED")
+    return {"mode": mode, "exit_code": result.returncode, "decision": data["decision"]}
 
-## JSON-вывод
 
-Формат [workflow.schema.json](../schemas/workflow.schema.json) — верхнеуровневый пакет `mode`, `execution`, `ai_text_generation`, `publication_ready=false`, `decision`, `steps_executed`, `pre_analysis`, `post_analysis`, `comparison`, `fact_guard`, `warnings`. Вложенные отчёты принадлежат ранее внедрённым `analysis.schema.json`, `compare.schema.json`, `fact-guard.schema.json`; последовательно проверяй **все четыре** при доступном JSON Schema-валидаторе. Объём метрик может быть большим, поэтому пересказывай только непосредственно значимые для конкретного текста.
+def install_smoke(source: Path, prefix: Path, kind: str) -> dict:
+    location = (prefix / ".agents/skills/slovodel" if kind == "codex"
+                else prefix / ".claude/skills/slovodel")
+    location.parent.mkdir(parents=True)
+    shutil.copytree(source, location)
+    check = verify_package(location)
+    work = prefix / "outside-skill"
+    work.mkdir()
+    original = work / "original.txt"
+    revised = work / "revised.txt"
+    original.write_text("Оплата 50 000 ₽ и 20 часов в неделю.", encoding="utf-8")
+    revised.write_text("Оплата 80 000 ₽ и 20 часов в неделю.", encoding="utf-8")
+    r = [run_cli(location, work, "audit", input=str(original)),
+         run_cli(location, work, "rewrite", before=str(original),
+                 after=str(revised)),
+         run_cli(location, work, "create", input=str(original)),
+         run_cli(location, work, "compare", before=str(original),
+                 after=str(revised))]
+    # A text-only agent still gets all the prose files when Python is absent.
+    if "При отсутствии Python" not in (location / "SKILL.md").read_text(encoding="utf-8"):
+        raise AssertionError("TEXT_ONLY_FALLBACK_UNDOCUMENTED")
+    return {"installation_layout": kind, "target_suffix": str(location.relative_to(prefix)),
+            "metadata": check, "modes": r, "text_only_files_present": True,
+            "agent_runtime_invoked": False}
 
-`fact_guard` не копирует суммы, имена, ссылки: лишь категории и счётчики. Измеренные метрики содержат агрегаты, версии и предупреждения. Не вставляй в ответ внутренние системные хеши или приватные данные без необходимости.
 
-## Fallback без Python
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output", help="Write evidence JSON (must not exist)")
+    args = parser.parse_args()
+    metadata = verify_package(SKILL)
+    with tempfile.TemporaryDirectory() as td:
+        base = Path(td)
+        installations = [
+            install_smoke(SKILL, base / "codex-home", "codex"),
+            install_smoke(SKILL, base / "claude-home", "claude"),
+        ]
+    result = {
+        "format": "slovodel.portable-install-smoke.v1",
+        "source": "checked-out-repository-copy",
+        "package": metadata,
+        "python": sys.version.split()[0],
+        "installations": installations,
+        "actual_agent_model_execution": "NOT_RUN",
+        "verification_scope": "directory-discovery-layout_and_isolated_python_cli_only",
+        "result": "PASS",
+    }
+    payload = json.dumps(result, sort_keys=True, ensure_ascii=False, indent=2)
+    if args.output:
+        dest = Path(args.output)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with dest.open("x", encoding="utf-8") as sink:
+            sink.write(payload + "\n")
+    print("INSTALL_SMOKE: PASS; Codex/Claude directory layout + isolated four-mode Python")
+    return 0
 
-Когда среда не может запускать скрипты/не получила разрешения:
-- Не утверждай, что Core запускался, не придумывай `reproducible`-числа и не изображай JSON-отчёт.
-- Выполни вручную **только качественный** `audit`/редактуру/`create`/сопоставление. Для `rewrite` самостоятельно перечисли сохранённые цифры, URL и условия **только как редакторскую сверку**, отметь, что автоматическая A8-проверка не проведена; при юридически значимом/критическом тексте не выдавай неподтверждённую редакцию за безопасную.
-- `compare` без исполняемой среды: сравни тон, смысл и исходные факты, но **не вычисляй воображаемые проценты влияния или технические показатели**.
-- Если пользователь просил именно вычислительный отчёт, честно укажи, что выполнение недоступно.
 
-## Что НЕ реализовано
-
-Нет автономного AI-генератора, AI-API, подключённого приватного MCP, Notion/Telegram, автоматической публикации, полноценного семантического доказательства сохранения фактов. **E2E-тесты Issue #8 проверяют фактическое исполнение локального Core и структурные статусы**, а не объективное качество созданного AI текста или реальный запуск чужого агента без доступа к его окружению.
-
-## Контекстные добавления в 0.8.2
-
-Для rewrite/compare доступен `--context-file context.json`. Формат и границы —
-в [смысловой сверке](semantic-review.md). Составляй записи из исходного брифа
-и метаданных до оценки результата, с указателем на источник. Не включай в
-подтверждения собственные догадки. `fact_guard` сохраняет исходную диагностику;
-`context_review` отдельно объясняет поддержанные добавления и остаточные блокировки.
-Даже при снятии workflow-блокировки обязательна редакторская проверка.
+if __name__ == "__main__":
+    raise SystemExit(main())

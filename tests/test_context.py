@@ -71,7 +71,10 @@ class ContextReviewTests(unittest.TestCase):
     def test_cli_context_schema_and_error(self):
         import subprocess,sys,tempfile
         from pathlib import Path
-        import jsonschema
+        try:
+            import jsonschema
+        except ImportError:
+            jsonschema = None  # CI repeats the suite after installing this extra.
         root=Path(__file__).resolve().parents[1]
         with tempfile.TemporaryDirectory() as tmp:
             p=Path(tmp)
@@ -80,6 +83,7 @@ class ContextReviewTests(unittest.TestCase):
             cmd=[sys.executable,str(root/'skills/slovodel/scripts/workflow.py'),'--mode','rewrite','--before',str(p/'before'),'--after',str(p/'after'),'--context-file',str(p/'context')]
             r=subprocess.run(cmd,capture_output=True)
             self.assertEqual(r.returncode,0,r.stderr)
-            jsonschema.validate(json.loads(r.stdout),json.loads((root/'schemas/workflow.schema.json').read_text(encoding='utf-8')))
+            if jsonschema is not None:
+                jsonschema.validate(json.loads(r.stdout),json.loads((root/'schemas/workflow.schema.json').read_text(encoding='utf-8')))
             (p/'context').write_text('null',encoding='utf-8')
             self.assertEqual(subprocess.run(cmd,capture_output=True).returncode,3)
