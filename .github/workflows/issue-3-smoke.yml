@@ -120,8 +120,8 @@ jobs:
           python -m pip install --disable-pip-version-check coverage==7.10.7
           mkdir -p test-results
           python -m coverage run --source=skills/slovodel/slovodel_core -m unittest discover -s tests -q
-          python -m coverage report --include="*/slovodel_core/metrics.py,*/slovodel_core/a2.py,*/slovodel_core/fact_guard.py,*/slovodel_core/reports.py,*/slovodel_core/workflow.py,*/slovodel_core/editorial_metrics.py,*/slovodel_core/zhuravlev.py" --show-missing --fail-under=90
-          python -m coverage json --include="*/slovodel_core/metrics.py,*/slovodel_core/a2.py,*/slovodel_core/fact_guard.py,*/slovodel_core/reports.py,*/slovodel_core/workflow.py,*/slovodel_core/editorial_metrics.py,*/slovodel_core/zhuravlev.py" -o test-results/coverage.json
+          python -m coverage report --include="*/slovodel_core/metrics.py,*/slovodel_core/a2.py,*/slovodel_core/fact_guard.py,*/slovodel_core/reports.py,*/slovodel_core/workflow.py,*/slovodel_core/editorial_metrics.py,*/slovodel_core/zhuravlev.py,*/slovodel_core/context.py" --show-missing --fail-under=90
+          python -m coverage json --include="*/slovodel_core/metrics.py,*/slovodel_core/a2.py,*/slovodel_core/fact_guard.py,*/slovodel_core/reports.py,*/slovodel_core/workflow.py,*/slovodel_core/editorial_metrics.py,*/slovodel_core/zhuravlev.py,*/slovodel_core/context.py" -o test-results/coverage.json
       - name: Save machine-readable unit/regression results
         run: python scripts/quality_report.py --output test-results/unittest-results.json
       - name: Re-run sourced Zhuravlev word benchmark without pretending Diaton equivalence

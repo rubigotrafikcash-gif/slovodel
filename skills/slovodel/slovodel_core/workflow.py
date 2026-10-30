@@ -41,7 +41,10 @@ def build(
     morphology: tuple[object, str] | None = None,
     morphology_reason: str = "MORPHOLOGY_OPT_IN_REQUIRED",
     protected_terms: tuple[str, ...] = (),
+    context_doc: tuple[bytes, str] | None = None,
 ) -> dict:
+    if context_doc is not None and mode not in ('rewrite', 'compare'):
+        raise ValueError('CONTEXT_REQUIRES_TWO_TEXT_MODE')
     if mode not in MODES:
         raise ValueError("WORKFLOW_INVALID_MODE")
     if mode in ("audit", "create"):
@@ -129,4 +132,15 @@ def build(
         if any(item["severity"] == "review"
                for item in guard["findings"]):
             warnings.append("FACT_GUARD_REVIEW_ITEMS")
+    if context_doc is not None:
+        from .context import review
+        contextual = review(first[1], second[1], context_doc,
+                            report['fact_guard']['findings'])
+        report['context_review'] = contextual
+        warnings.append('SUPPLIED_CONTEXT_REQUIRES_EDITOR_REVIEW')
+        if (mode == 'rewrite' and report['decision'] == 'blocked' and
+                not contextual['unresolved_blocker_kinds']):
+            report['decision'] = 'draft_requires_review'
+            warnings.remove('PUBLICATION_BLOCKED_BY_FACT_GUARD')
+            warnings.append('RAW_GUARD_BLOCK_EXPLAINED_BY_CONTEXT_ADDITIONS')
     return report

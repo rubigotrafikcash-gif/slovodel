@@ -106,6 +106,46 @@
       "items": {
         "type": "string"
       }
+    },
+    "context_review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "context_sha256",
+        "trust",
+        "supported_addition_kinds",
+        "unresolved_blocker_kinds"
+      ],
+      "properties": {
+        "context_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "trust": {
+          "const": "supplied_context_not_independently_verified"
+        },
+        "supported_addition_kinds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "date",
+              "number",
+              "proper_name",
+              "person",
+              "organization",
+              "calendar"
+            ]
+          }
+        },
+        "unresolved_blocker_kinds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
     }
   },
   "$defs": {

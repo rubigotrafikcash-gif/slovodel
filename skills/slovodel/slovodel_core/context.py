@@ -1,0 +1,49 @@
+"""Corroborate additions against explicitly supplied, attributed context.
+
+This does not verify the source or excuse removals, substitutions or bindings.
+Raw A8 findings remain unchanged in the workflow report.
+"""
+import hashlib
+import json
+from . import fact_guard as fg
+
+ALLOWED = {'date', 'number', 'proper_name', 'person', 'organization', 'calendar'}
+
+
+def review(before, after, document, findings):
+    raw, text = document
+    records = json.loads(text)
+    if not isinstance(records, list) or not 1 <= len(records) <= 100:
+        raise ValueError('CONTEXT_INVALID')
+    for item in records:
+        if (not isinstance(item, dict) or set(item) != {'text', 'source'} or
+                any(not isinstance(item[k], str) or not item[k].strip()
+                    for k in ('text', 'source')) or
+                len(item['text']) > 4000 or len(item['source']) > 512):
+            raise ValueError('CONTEXT_INVALID')
+    before, _ = fg._comparison_glyphs(before, after)
+    after, _ = fg._comparison_glyphs(after, before)
+    seeds, base = fg._shared_context(before, after)
+    left = fg.inventory(before, (), seeds, base)
+    right = fg.inventory(after, (), seeds, base)
+    # Separate records prevent invented names assembled across source boundaries.
+    supplied = {kind: fg.Counter() for kind in ALLOWED}
+    for item in records:
+        inv = fg.inventory(item['text'], (), seeds, base)
+        for kind in ALLOWED:
+            supplied[kind].update(inv[kind])
+    supported, unresolved = [], []
+    for finding in findings:
+        if finding['severity'] != 'blocker':
+            continue
+        kind = finding['kind']
+        additions = right[kind] - left[kind]
+        if (kind in ALLOWED and finding['removed_count'] == 0 and additions
+                and not (additions - supplied[kind])):
+            supported.append(kind)
+        else:
+            unresolved.append(kind)
+    return dict(context_sha256=hashlib.sha256(raw).hexdigest(),
+                trust='supplied_context_not_independently_verified',
+                supported_addition_kinds=supported,
+                unresolved_blocker_kinds=unresolved)
