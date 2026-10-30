@@ -1,0 +1,85 @@
+name: "Publish Slovodel v0.8.2 prerelease"
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/releases/v0.8.2.md"
+      - ".github/workflows/release-v0.8.2.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: slovodel-v0.8.2-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'rubigotrafikcash-gif/slovodel' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify the package before publication
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check jsonschema==4.25.1
+          python - <<'PY'
+          import sys, tomllib
+          from pathlib import Path
+          sys.path.insert(0, 'skills/slovodel')
+          from slovodel_core import __version__
+          assert __version__ == '0.8.2'
+          assert tomllib.loads(Path('pyproject.toml').read_text())['project']['version'] == __version__
+          assert 'version: "0.8.2"' in Path('skills/slovodel/SKILL.md').read_text()
+          assert 'PRE-RELEASE' in Path('docs/releases/v0.8.2.md').read_text()
+          PY
+          python -m unittest discover -s tests -q
+          python scripts/release_smoke.py --output /tmp/slovodel-v082-portable.json
+          python scripts/benchmark_v08.py --output /tmp/slovodel-v082-benchmark.json
+          python scripts/offline_smoke.py
+      - name: Create a portable skill archive
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile, ZIP_DEFLATED
+          import hashlib
+          root = Path('skills/slovodel')
+          out = Path('dist')
+          out.mkdir(exist_ok=True)
+          archive = out / 'slovodel-v0.8.2.zip'
+          with ZipFile(archive, 'w', ZIP_DEFLATED) as bundle:
+              for path in sorted(root.rglob('*')):
+                  if path.is_file() and '__pycache__' not in path.parts and path.suffix != '.pyc':
+                      bundle.write(path, 'slovodel/' + path.relative_to(root).as_posix())
+          digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+          (out / 'slovodel-v0.8.2.sha256').write_text(digest + '  ' + archive.name + '\n')
+          PY
+      - name: Publish a new prerelease without replacing an existing tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag=v0.8.2
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release already exists; no tag or asset is overwritten."
+            exit 0
+          fi
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" >/dev/null 2>&1; then
+            actual="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq '.object.sha')"
+            test "$actual" = "$GITHUB_SHA"
+          fi
+          gh release create "$tag" dist/slovodel-v0.8.2.zip dist/slovodel-v0.8.2.sha256 \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+            --title "Словодел v0.8.2 — контекст и завершённая смысловая сверка" \
+            --notes-file docs/releases/v0.8.2.md
+          mkdir -p /tmp/slovodel-v082-verify
+          gh release download "$tag" --repo "$GITHUB_REPOSITORY" \
+            -p 'slovodel-v0.8.2.zip' -D /tmp/slovodel-v082-verify
+          cmp dist/slovodel-v0.8.2.zip /tmp/slovodel-v082-verify/slovodel-v0.8.2.zip
