@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 import hashlib
 import json
 import os
+import platform
 from pathlib import Path
 import re
 import subprocess
@@ -54,6 +55,7 @@ def main() -> None:
         if value is not None:command.extend(('--'+name.replace('_','-'),value))
     if args.morphology:command.append('--morphology')
     metadata={'execution_version':'1.0.0','tool_version':__version__,'mode':args.mode,
+              'python_executable':sys.executable,'python_version':platform.python_version(),
               'started_at':datetime.now(timezone.utc).isoformat(),
               'core_exit_code':None,'verification':'not_run','word_limits':None,
               'configured_model':None,'configured_effort':None,'publication_ready':False}

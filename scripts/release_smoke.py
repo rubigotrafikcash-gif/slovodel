@@ -28,6 +28,7 @@ REQUIRED = (
     "slovodel_core/metrics.py", "slovodel_core/fact_guard.py",
     "slovodel_core/context.py", "slovodel_core/equivalence.py",
     "scripts/verify_workflow.py", "slovodel_core/verification.py", "slovodel_core/modality.py",
+    "scripts/check_workflow.py", "scripts/check_workflow.ps1", "slovodel_core/checked_workflow.py",
     "assets/voice-brief.md", "references/agent-workflow.md",
     "references/compliance.md", "references/morphology-licenses.md",
     "references/corpus-license-review.md",
