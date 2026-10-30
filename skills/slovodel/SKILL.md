@@ -3,7 +3,7 @@ name: slovodel
 description: "AI-копирайтер для создания и улучшения текстов на русском языке: посты, реклама, статьи, письма, сайты, интерфейсы и сценарии. Применяет опубликованную методологию Черепановой и фоносемантические идеи Журавлёва: звучание, ритм, лексику, грамматику и синтаксис. Сохраняет факты и голос автора; использует локальные измерения, когда они доступны."
 license: MIT
 metadata:
-  version: "0.8.2"
+  version: "0.8.3"
 ---
 
 # Словодел
@@ -74,9 +74,12 @@ python scripts/workflow.py --mode audit --input original.txt
 python scripts/workflow.py --mode rewrite --before original.txt --after revision.txt
 python scripts/workflow.py --mode create --input draft.txt
 python scripts/workflow.py --mode compare --before a.txt --after b.txt
+python scripts/verify_workflow.py --report core.json --before original.txt --after revision.txt --core-exit-code 0 --output verification.json
 ```
 
 В rewrite достаточно одного вызова: анализ оригинала, A8 и сравнение уже внутри. Предварительный audit нужен только тогда, когда измерения оригинала действительно влияют на план правки. Для согласованных обязательных формулировок добавь `--protected-file terms.txt`.
+
+После Core используй `scripts/verify_workflow.py` для проверки сохранённого отчёта, входных хешей и кода завершения. Передай те же входы и контекст; для audit/create — `--input`, для rewrite/compare — `--before` и `--after`. Полная проверка схем возможна при установленном `jsonschema`; без него помощник честно возвращает `schema_validation=unavailable`, а не имитирует валидатор. Проверка отчёта не заменяет твою смысловую сверку.
 
 Парси настоящий JSON и проверяй коды завершения. `blocked` (код 5) означает эвристическое расхождение: проверь его и исправь реальную подмену факта. Не возвращай испорченное написание ради снятия блокировки. Допустимое изменение записи обоснуй отдельно от машинного статуса по [смысловой сверке](references/semantic-review.md). `review_required` не доказывает эквивалентности; все находки review сверь по смыслу. `publication_ready=false` — постоянная граница машинного отчёта.
 

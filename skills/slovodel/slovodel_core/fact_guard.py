@@ -1,6 +1,6 @@
 """A8 deterministic *risk screening* of edits, not semantic equivalence.
 
-Rules 2.3 (Core 0.8.2) separate two severities:
+Rules 2.4 (Core 0.8.3) separate two severities:
 
 * ``blocker`` — a detected protected fact changed (amounts, numbers written in
   digits or words, codes, dates, weekdays/months, names, links, polarity or
@@ -23,8 +23,9 @@ from functools import lru_cache
 
 from . import __version__
 from .equivalence import date_key
+from .modality import MAY, MUST, changes as modality_changes
 
-VERSION = "a8-rules-2.3"
+VERSION = "a8-rules-2.4"
 NUM = r"(?:\d{1,3}(?:[   ]\d{3})+|\d+)(?:[.,]\d+)?"
 URL = re.compile(r"(?i)(?<!\w)(?:https?://|www\.)[^\s<>\"'«»]+")
 EMAIL = re.compile(r"(?iu)(?<![\w.+-])[\w.+-]+@[\w.-]+\.[a-zа-яё]{2,}")
@@ -258,11 +259,6 @@ POLARITY_PAIRS = (
     (("возможн",), ("невозможн",)),
     (("обязательн",), ("необязательн",)),
 )
-MAY = frozenset(("может", "могут", "можете", "можем", "вправе", "допускается",
-                 "разрешается"))
-MUST = frozenset(("должен", "должна", "должно", "должны", "обязан", "обязана",
-                  "обязаны", "обязательно", "обязательна", "обязателен",
-                  "обязательны", "необходимо", "требуется", "нужно"))
 ANCHOR_STOP = frozenset((
     "для", "при", "около", "всего", "только", "лишь", "уже", "это", "все",
     "его", "её", "нас", "вас", "они", "она", "оно", "руб", "рублей", "рубля",
@@ -803,6 +799,7 @@ def check(before: str, after: str, terms: tuple[str, ...] = ()) -> dict:
                 equivalent_numeric = {kind for kind in (*_NUMERIC_KINDS, "binding", "commercial_term")
                                       if canonical_left[kind] == canonical_right[kind]}
     findings = []
+    modal_removed, modal_added, modal_severity = modality_changes(before, after)
     known_names = {stem(w) for w in WORD.findall(before) if w[0].isupper()}
     for kind in CATEGORIES:
         if kind in equivalent_numeric:
@@ -812,8 +809,7 @@ def check(before: str, after: str, terms: tuple[str, ...] = ()) -> dict:
             missing, added = _polarity_changed(old, new)
             before_count = after_count = missing
         elif kind == "modality":
-            flipped = _flip((old["may"], old["must"]), (new["may"], new["must"]))
-            missing = added = int(flipped)
+            missing, added = modal_removed, modal_added
             before_count, after_count = sum(old.values()), sum(new.values())
         elif kind in ("binding", "initial_capital"):
             missing, added = _binding_changed(old, new)
@@ -825,7 +821,7 @@ def check(before: str, after: str, terms: tuple[str, ...] = ()) -> dict:
         if missing or added:
             findings.append({
                 "kind": kind,
-                "severity": (REVIEW if kind == 'proper_name' and not missing
+                "severity": (modal_severity if kind == 'modality' else REVIEW if kind == 'proper_name' and not missing
                              and set(new - old) <= known_names else SEVERITY[kind]),
                 "before_count": before_count,
                 "after_count": after_count,
