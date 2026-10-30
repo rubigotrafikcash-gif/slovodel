@@ -113,6 +113,10 @@ _RATE = re.compile(
     r"недел[а-яё]*|месяц[а-яё]*|год(?:а|ов)?)(?!\w)"
 )
 _PAYMENT_ROLE = re.compile(r"(?iu)(?<!\w)(предоплат[а-яё]*|аванс[а-яё]*|скидк[а-яё]*|залог[а-яё]*)(?!\w)")
+_COMMERCIAL_LOOP_CUE = re.compile(
+    r"(?iu)(?<!\w)(?:предоплат[а-яё]*|аванс[а-яё]*|скидк[а-яё]*|залог[а-яё]*|"
+    r"от|до|менее|более|начиная|в|за)(?!\w)|/"
+)
 _FREE = re.compile(r"(?iu)(?<!\w)бесплатн[а-яё]*(?!\w)")
 _DATE_RELATION = re.compile(r"(?iu)(?<!\w)(не\s+позднее|не\s+раньше|после|до|с|к)[\s:—–-]*$")
 _AUDIENCE = re.compile(r"(?iu)(?<!\w)(?:помогаем|поможем|работаем\s+с|для)\s+([^.!?;\n]{1,100})")
@@ -393,8 +397,11 @@ def _calendar(match: re.Match) -> str:
 def _commercial_facts(text: str) -> Counter:
     """Bind a price qualifier, billing period or payment role to its value."""
     result: Counter = Counter()
-    for regex, formatter in ((MONEY, _money), (MONEY_PREFIX, _money),
-                             (QUANTITY, lambda m: _compact(m.group()))):
+    # Without any role, bound or rate cue the value loop cannot emit a fact.
+    # Keep date relations and free-claim checks below independent of this gate.
+    patterns = ((MONEY, _money), (MONEY_PREFIX, _money),
+                (QUANTITY, lambda m: _compact(m.group()))) if _COMMERCIAL_LOOP_CUE.search(text) else ()
+    for regex, formatter in patterns:
         for match in regex.finditer(text):
             prior = text[max(0, match.start() - 80):match.start()]
             prior = re.split(r"[.!?;\n]", prior)[-1]
