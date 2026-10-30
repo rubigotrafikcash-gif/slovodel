@@ -1,11 +1,11 @@
 """A8 deterministic *risk screening* of edits, not semantic equivalence.
 
-Rules 2.1 (Core 0.8.1) separate two severities:
+Rules 2.2 (Core 0.8.2) separate two severities:
 
 * ``blocker`` — a detected protected fact changed (amounts, numbers written in
   digits or words, codes, dates, weekdays/months, names, links, polarity or
   modality flips, guarantees, number-to-word bindings, protected phrases).
-  Publication stays blocked until a human confirms the change.
+  An editor must resolve the finding; the report itself never approves prose.
 * ``review`` — wording that often carries conditions or scope changed
   (если/только/после…, все/большинство…). A person must check it, but a
   paraphrase alone does not block the draft.
@@ -23,7 +23,7 @@ from functools import lru_cache
 
 from . import __version__
 
-VERSION = "a8-rules-2.1"
+VERSION = "a8-rules-2.2"
 NUM = r"(?:\d{1,3}(?:[   ]\d{3})+|\d+)(?:[.,]\d+)?"
 URL = re.compile(r"(?i)(?<!\w)(?:https?://|www\.)[^\s<>\"'«»]+")
 EMAIL = re.compile(r"(?iu)(?<![\w.+-])[\w.+-]+@[\w.-]+\.[a-zа-яё]{2,}")
@@ -50,6 +50,13 @@ QUANTITY = re.compile(
     r"дн(?:я|ей|ь)|недел[ьи-я]*|месяц[а-я]*|лет|год(?:а|ов)?|"
     r"км|кг|шт\.?)(?:\s+(?:в|за)\s+(?:недел[ьи-я]*|месяц[а-я]*|"
     r"день|сутки|год))?(?!\w)"
+)
+_MEASURE_UNIT = r"кв\.[ \t]*м\.?|м[²2]|см[²2]|м(?:етр(?:а|ов)?)?|см|мм|мл|л(?:итр(?:а|ов)?)?"
+MEASURE = re.compile(rf"(?iu)(?<!\w)(?P<number>{NUM})\s*(?P<unit>{_MEASURE_UNIT})(?!\w)")
+# Extract a bounded two-line characteristic, not arbitrary preceding prose.
+FIELD_MEASURE = re.compile(
+    rf"(?imu)^[ \t]*(?:объ[её]м|площадь|высота|длина|ширина|толщина),[ \t]*"
+    rf"(?P<unit>{_MEASURE_UNIT})[ \t]*\r?\n[ \t]*(?P<number>{NUM})[ \t]*(?=\r?$)"
 )
 # A token mixing letters and digits (promo codes, models, SKUs): OSEN10, 5G.
 CODE = re.compile(r"(?u)(?<![\w-])(?=[\w-]*\d)(?=[\w-]*[^\W\d_])[\w]+(?:-[\w]+)*(?![\w-])")
@@ -106,6 +113,57 @@ _PAYMENT_ROLE = re.compile(r"(?iu)(?<!\w)(предоплат[а-яё]*|аван�
 _FREE = re.compile(r"(?iu)(?<!\w)бесплатн[а-яё]*(?!\w)")
 _DATE_RELATION = re.compile(r"(?iu)(?<!\w)(не\s+позднее|не\s+раньше|после|до|с|к)[\s:—–-]*$")
 _AUDIENCE = re.compile(r"(?iu)(?<!\w)(?:помогаем|поможем|работаем\s+с|для)\s+([^.!?;\n]{1,100})")
+
+# These lexical cues trigger review, not a claim of semantic understanding.
+TEMPORAL = re.compile(r"(?iu)(?<!\w)(?:на\s+момент\s+публикации|на\s+сегодняшний\s+день|"
+                      r"в\s+настоящий\s+момент|в\s+этом\s+году|сейчас|сегодня|тогда)(?!\w)")
+EPISTEMIC = re.compile(r"(?iu)(?<!\w)(?:предполож[а-яё]*|гипотез[а-яё]*|"
+                       r"вероятно|возможно|по-видимому)(?!\w)")
+ATTRIBUTION = re.compile(r"(?iu)(?<!\w)(?:по\s+данным\s+исследован[а-яё]*|"
+                         r"по\s+мнению\s+автора|автор\s+(?:считает|полагает)|"
+                         r"исследован[а-яё]*\s+(?:показал[а-яё]*|доказал[а-яё]*))(?!\w)")
+_LATIN_TO_CYRILLIC = str.maketrans("ABCEHKMOPTXYaceopxy", "АВСЕНКМОРТХУасеорху")
+_CYRILLIC_TO_LATIN = {v: chr(k) for k, v in _LATIN_TO_CYRILLIC.items()}
+
+
+def _comparison_glyphs(text: str, peer: str) -> tuple[str, list[dict]]:
+    """Normalize only mixed-script words with an unambiguous single-script result.
+
+    Never touch URLs, emails, identifiers containing digits, or pure-script words.
+    Offsets refer to the untouched input; hashes in CLI reports retain provenance.
+    Ambiguous all-lookalike words remain untouched. Avito is an explicit alias,
+    activated only by a mixed spelling and its canonical Cyrillic peer.
+    """
+    protected = [m.span() for regex in (URL, EMAIL) for m in regex.finditer(text)]
+    protected.sort()
+    cursor = 0
+    changes = []
+    pieces = []
+    end = 0
+    avito_peer = bool(re.search(r"(?iu)(?<!\w)авито(?!\w)", peer))
+    for m in re.finditer(r"\w+", text):
+        while cursor < len(protected) and protected[cursor][1] <= m.start():
+            cursor += 1
+        if cursor < len(protected) and protected[cursor][0] < m.end():
+            continue
+        token = m.group()
+        if not token.isalpha() or not re.search(r"[A-Za-z]", token) or not re.search(r"[А-Яа-яЁё]", token):
+            continue
+        cyr = token.translate(_LATIN_TO_CYRILLIC)
+        lat = token.translate(_CYRILLIC_TO_LATIN)
+        options = [v for v in (cyr, lat) if re.fullmatch(r"[А-Яа-яЁё]+|[A-Za-z]+", v)]
+        kind = "mixed_script_visual"
+        if lat.casefold() == "avito" and avito_peer:
+            replacement, kind = "Авито", "mixed_avito_alias"
+        elif len(options) == 1:
+            replacement = options[0]
+        else:
+            continue
+        pieces.extend((text[end:m.start()], replacement))
+        end = m.end()
+        changes.append({"start": m.start(), "end": m.end(), "kind": kind})
+    pieces.append(text[end:])
+    return "".join(pieces), changes
 
 _UNITS = {
     0: "ноль нуль нуля ноля нулю нолю",
@@ -226,6 +284,7 @@ SEVERITY = {
     "condition": REVIEW, "quantifier": REVIEW,
     "commercial_term": BLOCKER,
     "initial_capital": REVIEW, "audience_context": REVIEW,
+    "temporal_context": REVIEW, "epistemic_context": REVIEW, "attribution": REVIEW,
 }
 CATEGORIES = tuple(SEVERITY)
 WARNINGS = [
@@ -282,6 +341,15 @@ def _money(match: re.Match) -> str:
     )
     scale = _compact(match.groupdict().get("scale") or "")
     return currency + ":" + _amount(match.group("number"), scale)
+
+
+def _measure(match: re.Match) -> str:
+    unit = _compact(match.group('unit'))
+    unit = ('м²' if unit.startswith('кв.') or unit == 'м2' else
+            'см²' if unit == 'см2' else
+            'м' if unit.startswith('метр') else
+            'л' if unit.startswith('литр') else unit)
+    return _amount(match.group('number')) + ':' + unit
 
 
 def _number_word(match: re.Match) -> str:
@@ -560,6 +628,9 @@ def inventory(text: str, terms: tuple[str, ...] = (),
     counts["commercial_term"] = _commercial_facts(masked)
     counts["initial_capital"] = _initial_capitals(masked)
     counts["audience_context"] = _audience_context(masked)
+    for kind, pattern in (("temporal_context", TEMPORAL),
+                          ("epistemic_context", EPISTEMIC), ("attribution", ATTRIBUTION)):
+        counts[kind].update(_compact(m.group()) for m in pattern.finditer(masked))
     masked = text
     positions: list[tuple[int, str, str]] = []
     for name, regex, formatter, trim in (
@@ -571,6 +642,8 @@ def inventory(text: str, terms: tuple[str, ...] = (),
         ("deadline", DEADLINE, None, False),
         ("calendar", CALENDAR, _calendar, False),
         ("range", RANGE, None, False),
+        ("quantity", FIELD_MEASURE, _measure, False),
+        ("quantity", MEASURE, _measure, False),
         ("quantity", QUANTITY, None, False),
         ("code", CODE, None, False),
         ("number", NUMBER, None, False),
@@ -667,9 +740,15 @@ def _binding_changed(old: Counter, new: Counter) -> tuple[int, int]:
 
 
 def check(before: str, after: str, terms: tuple[str, ...] = ()) -> dict:
+    original_before, original_after = before, after
+    before, before_changes = _comparison_glyphs(original_before, original_after)
+    after, after_changes = _comparison_glyphs(original_after, original_before)
     seeds, base = _shared_context(before, after)
     left = inventory(before, terms, seeds, base)
     right = inventory(after, terms, seeds, base)
+    # Explicit literal phrases remain exact, even when visual spelling is repaired.
+    left["protected_term"] = Counter({t: protected_count(original_before, t) for t in terms})
+    right["protected_term"] = Counter({t: protected_count(original_after, t) for t in terms})
     # Preserve historical finding categories, but suppress numeric differences
     # that disappear after a supported word-to-digit normalization. Context
     # bindings are compared too, so swapping two equivalent amounts still fails.
@@ -711,12 +790,16 @@ def check(before: str, after: str, terms: tuple[str, ...] = ()) -> dict:
                 "removed_count": missing,
                 "added_count": added,
             })
-    unchanged = before == after
+    unchanged = original_before == original_after
     blocking = any(item["severity"] == BLOCKER for item in findings)
     reviewing = any(item["severity"] == REVIEW for item in findings)
     decision = ("blocked" if blocking else
                 "unchanged" if unchanged else "review_required")
     warnings = list(WARNINGS)
+    if before_changes or after_changes:
+        warnings.append("COMPARISON_GLYPHS_NORMALIZED_REVIEW_ORIGINALS")
+    if any(left["temporal_context"].values()) or any(right["temporal_context"].values()):
+        warnings.append("TEMPORAL_CONTEXT_REQUIRES_SOURCE_DATE_REVIEW")
     if blocking:
         warnings.append("BLOCKING_FACT_DIFFERENCES_REQUIRE_APPROVAL")
     if reviewing:
@@ -731,5 +814,6 @@ def check(before: str, after: str, terms: tuple[str, ...] = ()) -> dict:
         "semantic_equivalence": "not_verified",
         "changed": not unchanged,
         "findings": findings,
+        "comparison_normalization": {"before": before_changes, "after": after_changes},
         "warnings": warnings,
     }

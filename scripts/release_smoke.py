@@ -30,7 +30,7 @@ REQUIRED = (
     "references/compliance.md", "references/morphology-licenses.md",
     "references/corpus-license-review.md",
     "references/methodology.md", "references/method-in-practice.md",
-    "references/natural-russian.md",
+    "references/natural-russian.md", "references/semantic-review.md",
 )
 LINK = re.compile(r"(?<!!)\[[^]]+\]\(([^)]+)\)")
 
